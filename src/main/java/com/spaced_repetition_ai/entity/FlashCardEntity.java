@@ -1,5 +1,6 @@
 package com.spaced_repetition_ai.entity;
 
+import com.spaced_repetition_ai.model.ReviewRating;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,7 +12,6 @@ import java.time.LocalDateTime;
 @Document(collection = "FlashCard")
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 public class FlashCardEntity {
 
     @Id
@@ -23,10 +23,13 @@ public class FlashCardEntity {
     private LocalDateTime createdDate;
     private LocalDateTime lastReview;
     private LocalDateTime nextReview;
-    private double interval;
+    private int interval;
+    private double easeFactor;
+    private ReviewRating rating;
 
     public FlashCardEntity(String id, String front, String back, String imagePath,
-                           String audioPath, LocalDateTime createdDate, LocalDateTime lastReview, LocalDateTime nextReview, double interval) {
+                           String audioPath, LocalDateTime createdDate, LocalDateTime lastReview,
+                           LocalDateTime nextReview, int interval, ReviewRating rating, double easeFactor) {
         this.id = null;
         this.front = front;
         this.back = back;
@@ -36,6 +39,8 @@ public class FlashCardEntity {
         this.lastReview = lastReview;
         this.nextReview = nextReview;
         this.interval = interval;
+        this.rating = rating;
+        this.easeFactor = easeFactor;
     }
 
 }

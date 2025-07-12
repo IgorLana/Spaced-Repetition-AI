@@ -2,6 +2,7 @@ package com.spaced_repetition_ai.service;
 
 import com.spaced_repetition_ai.entity.FlashCardEntity;
 import com.spaced_repetition_ai.model.FlashCard;
+import com.spaced_repetition_ai.model.ReviewRating;
 import com.spaced_repetition_ai.repository.FlashCardRepository;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
@@ -23,7 +24,9 @@ public class FlashCardService {
             LocalDateTime createdDate,
             LocalDateTime lastReview,
             LocalDateTime nextReview,
-            double interval
+            double interval,
+            ReviewRating review,
+            double easeFactor
     ) {}
 
     public FlashCardService(TextGenerationService textGenerationService, ImageGenerationService imageGenerationService, AudioGenerationService audioGenerationService, FlashCardRepository flashCardRepository) {
@@ -38,8 +41,9 @@ public class FlashCardService {
         LocalDateTime createdDate = LocalDateTime.now();
         LocalDateTime lastReview = createdDate;
         LocalDateTime nextReview = createdDate.plusMinutes(1);
-        double interval = 1.0;
-        FlashCardEntity flashCardEntity = new FlashCardEntity(null, front, back, imagePath, audioPath, createdDate,lastReview, nextReview, interval );
+        double easeFactor = 2.5;
+        int interval = 1;
+        FlashCardEntity flashCardEntity = new FlashCardEntity(null, front, back, imagePath, audioPath, createdDate,lastReview, nextReview, interval, ReviewRating.BOM, easeFactor);
         flashCardRepository.save(flashCardEntity);
         System.out.println("FlashCard salvo com sucesso!");
     }
@@ -54,12 +58,13 @@ public class FlashCardService {
         LocalDateTime createdDate = LocalDateTime.now();
         LocalDateTime lastReview = createdDate;
         LocalDateTime nextReview = createdDate.plusMinutes(1);
-        double interval = 1.0;
+        int interval = 1;
+        double easeFactor = 2;
 
-        FlashCardEntity flashCardEntity = new FlashCardEntity(null, front, back, imagePath, audioPath,createdDate, lastReview, nextReview, interval);
+        FlashCardEntity flashCardEntity = new FlashCardEntity(null, front, back, imagePath, audioPath,createdDate, lastReview, nextReview, interval, ReviewRating.BOM, easeFactor);
         flashCardRepository.save(flashCardEntity);
         System.out.println("FlashCard salvo com sucesso!");
-        return new GeneratedFlashCard(front, back, imagePath, audioPath, createdDate, lastReview, nextReview, interval);
+        return new GeneratedFlashCard(front, back, imagePath, audioPath, createdDate, lastReview, nextReview, interval, ReviewRating.BOM, easeFactor);
     }
 
 }

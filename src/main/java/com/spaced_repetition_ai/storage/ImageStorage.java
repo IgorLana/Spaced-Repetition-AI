@@ -20,7 +20,7 @@ public class ImageStorage {
             Files.createDirectories(path.getParent());
             Files.write(path, imageData);
 
-            return path.toAbsolutePath().toString();
+            return "/storage/" + imageName;
         } catch (IOException e) {
             System.err.println("Erro ao salvar a imagem: " + e.getMessage());
 

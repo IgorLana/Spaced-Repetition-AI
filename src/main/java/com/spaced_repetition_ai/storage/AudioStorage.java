@@ -35,7 +35,7 @@ public class AudioStorage {
             Files.createDirectories(path.getParent()); // garante que a pasta existe
             AudioSystem.write(audioInputStream, AudioFileFormat.Type.WAVE, path.toFile());
             System.out.println("Áudio salvo como WAV em: " + path.toAbsolutePath());
-            return path.toAbsolutePath().toString();
+            return "/storage/" + audioName;
         } catch (IOException e) {
             System.out.println("Erro ao salvar WAV: " + e.getMessage());
             return null;

@@ -1,8 +1,12 @@
 package com.spaced_repetition_ai.service;
 
+import com.spaced_repetition_ai.entity.DeckEntity;
 import com.spaced_repetition_ai.entity.FlashCardEntity;
+import com.spaced_repetition_ai.entity.ReviewEntity;
 import com.spaced_repetition_ai.model.ReviewRating;
+import com.spaced_repetition_ai.repository.DeckRepository;
 import com.spaced_repetition_ai.repository.FlashCardRepository;
+import com.spaced_repetition_ai.repository.ReviewRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -15,9 +19,14 @@ import java.util.Optional;
 public class ReviewService {
 
     private final FlashCardRepository flashCardRepository;
+    private final DeckRepository deckRepository;
+    private final ReviewRepository reviewRepository;
 
-    public ReviewService(FlashCardRepository flashCardRepository) {
+    public ReviewService(FlashCardRepository flashCardRepository, DeckRepository deckRepository, ReviewRepository reviewRepository) {
+
         this.flashCardRepository = flashCardRepository;
+        this.deckRepository = deckRepository;
+        this.reviewRepository = reviewRepository;
     }
 
     public void reviewFlashCard(String id, ReviewRating rating){
@@ -58,7 +67,31 @@ public class ReviewService {
                 card.setNextReview(nextReview);
                 card.setRating(rating);
                 flashCardRepository.save(card);
+
+                String deckId = card.getDeckId();
+                String flashCardId = card.getId();
+                LocalDateTime reviewDate = LocalDateTime.now();
+                ReviewRating reviewRating = card.getRating();
+                LocalDateTime nextReviewDate = card.getNextReview();
+                int intervalReview = card.getInterval();
+                double easeFactorReview = card.getEaseFactor();
+                long timeSpent = reviewDate.until(nextReviewDate, java.time.temporal.ChronoUnit.MINUTES);
+
+                ReviewEntity reviewEntity = new ReviewEntity(null, deckId, flashCardId, reviewRating, reviewDate, nextReviewDate, intervalReview, easeFactorReview, timeSpent);
+
+                reviewRepository.save(reviewEntity);
+
                 System.out.println("FlashCard revisado com sucesso!");
+
+            //private String id;
+    //        private String deckId;
+      //      private String flashCardId;
+        //    private ReviewRating rating;
+          //  private LocalDateTime ReviewDate;
+            //private LocalDateTime NextReviewDate;
+    //        private int interval;
+      //      private double easeFactor;
+        //    private long timeSpent;
 
 
             } else {
@@ -68,8 +101,8 @@ public class ReviewService {
 
     }
 
-    public List<FlashCardEntity> listFlashCardsToReview() {
-        return flashCardRepository.findByNextReviewBeforeOrderByNextReview(LocalDateTime.now());
+    public List<FlashCardEntity> listFlashCardsToReview(String deckId) {
+        return flashCardRepository.findByDeckIdAndNextReviewBeforeOrderByNextReview(deckId, LocalDateTime.now());
     }
 
 

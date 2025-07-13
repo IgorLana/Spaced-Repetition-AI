@@ -26,8 +26,8 @@ public class ReviewController {
     }
 
     @GetMapping("/review")
-    public ResponseEntity<List<FlashCardEntity>> CardToReview(){
-        List<FlashCardEntity> toReview = reviewService.listFlashCardsToReview();
+    public ResponseEntity<List<FlashCardEntity>> CardToReview(@RequestParam("id") String deckId ){
+        List<FlashCardEntity> toReview = reviewService.listFlashCardsToReview(deckId);
 
         if(toReview.isEmpty()){
             return ResponseEntity.noContent().build();

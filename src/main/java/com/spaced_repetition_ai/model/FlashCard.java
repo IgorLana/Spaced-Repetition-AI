@@ -19,12 +19,7 @@ public class FlashCard {
     private LocalDateTime lastReview;
     private LocalDateTime nextReview;
     private double interval;
+    private Deck deck;
 
-
-
-    public FlashCard(String front, String back) {
-        this.front = front;
-        this.back = back;
-    }
 
 }

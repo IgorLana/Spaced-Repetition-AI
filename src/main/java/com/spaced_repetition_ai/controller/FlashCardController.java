@@ -28,9 +28,9 @@ public class FlashCardController {
     }
 
     @PostMapping("/ai")
-    public ResponseEntity<FlashCardService.GeneratedFlashCard> generateAiFlashCard(@RequestParam("prompt") String prompt) {
+    public ResponseEntity<FlashCardService.GeneratedFlashCard> generateAiFlashCard(@RequestParam("prompt") String prompt, @RequestParam("deckId") String deckId) {
         try {
-            FlashCardService.GeneratedFlashCard generatedCard = flashCardService.generateAiFlashCard(prompt);
+            FlashCardService.GeneratedFlashCard generatedCard = flashCardService.generateAiFlashCard(prompt, deckId);
             return ResponseEntity.ok(generatedCard); // Retorna 200 OK com os dados do flashcard em JSON
         } catch (Exception e) {
             e.printStackTrace();

@@ -10,6 +10,4 @@ public enum ReviewRating {
     BOM,
     FACIL
 
-
-
 }

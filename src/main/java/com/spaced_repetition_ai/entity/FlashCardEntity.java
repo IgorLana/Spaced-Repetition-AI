@@ -1,6 +1,7 @@
 package com.spaced_repetition_ai.entity;
 
 import com.spaced_repetition_ai.model.ReviewRating;
+import jakarta.persistence.ManyToOne;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -26,10 +27,12 @@ public class FlashCardEntity {
     private int interval;
     private double easeFactor;
     private ReviewRating rating;
+    @ManyToOne
+    private String deckId;
 
     public FlashCardEntity(String id, String front, String back, String imagePath,
                            String audioPath, LocalDateTime createdDate, LocalDateTime lastReview,
-                           LocalDateTime nextReview, int interval, ReviewRating rating, double easeFactor) {
+                           LocalDateTime nextReview, int interval, ReviewRating rating, double easeFactor, String deckId) {
         this.id = null;
         this.front = front;
         this.back = back;
@@ -41,6 +44,8 @@ public class FlashCardEntity {
         this.interval = interval;
         this.rating = rating;
         this.easeFactor = easeFactor;
+        this.deckId = deckId;
+
     }
 
 }

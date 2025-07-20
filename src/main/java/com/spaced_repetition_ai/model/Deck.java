@@ -12,12 +12,16 @@ public class Deck {
     private String name;
     private String description;
     private LocalDateTime createdDate;
-    private String TargetLanguage;
-    private String SourceLanguage;
+    private Language TargetLanguage;
+    private Language SourceLanguage;
     private String AudioPrompt;
     private String ImagePrompt;
     private String TextPrompt;
     private String AudioPath;
     private String ImagePath;
     private double easeFactor;
+    private String standardTextPrompt;
+    private boolean generateImage;
+    private boolean generateAudio;
+    private DeckType deckType;
 }

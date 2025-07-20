@@ -11,7 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/review")
-public class ReviewController {
+public class        ReviewController {
 
     private final ReviewService reviewService;
 
@@ -25,7 +25,7 @@ public class ReviewController {
         reviewService.reviewFlashCard(id, rating);
     }
 
-    @GetMapping("/review")
+    @GetMapping
     public ResponseEntity<List<FlashCardEntity>> CardToReview(@RequestParam("id") String deckId ){
         List<FlashCardEntity> toReview = reviewService.listFlashCardsToReview(deckId);
 

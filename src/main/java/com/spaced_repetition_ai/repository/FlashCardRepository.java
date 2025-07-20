@@ -10,5 +10,6 @@ public interface FlashCardRepository
 extends MongoRepository<FlashCardEntity, String> {
        List<FlashCardEntity> findByNextReviewBeforeOrderByNextReview(LocalDateTime now);
        List<FlashCardEntity> findByDeckIdAndNextReviewBeforeOrderByNextReview(String deckId, LocalDateTime now);
+       List<FlashCardEntity> findByDeckId(String deckId);
 
 }

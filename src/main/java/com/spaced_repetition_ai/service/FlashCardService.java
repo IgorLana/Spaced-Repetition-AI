@@ -1,5 +1,8 @@
 package com.spaced_repetition_ai.service;
 
+import com.spaced_repetition_ai.dto.DeckResponseDTO;
+import com.spaced_repetition_ai.dto.FlashcardRequestDTO;
+import com.spaced_repetition_ai.dto.FlashcardResponseDTO;
 import com.spaced_repetition_ai.entity.DeckEntity;
 import com.spaced_repetition_ai.entity.FlashCardEntity;
 import com.spaced_repetition_ai.model.DeckType;
@@ -8,11 +11,12 @@ import com.spaced_repetition_ai.model.ReviewRating;
 import com.spaced_repetition_ai.repository.DeckRepository;
 import com.spaced_repetition_ai.repository.FlashCardRepository;
 import com.spaced_repetition_ai.repository.ReviewRepository;
-import org.springframework.lang.Nullable;
+
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class FlashCardService {
@@ -24,27 +28,6 @@ public class FlashCardService {
     private final DeckRepository deckRepository;
     private final ReviewRepository reviewRepository;
 
-    public record GeneratedFlashCard(
-            String frontText,
-            String backText,
-            String imagePath,
-            String audioPath,
-            LocalDateTime createdDate,
-            LocalDateTime lastReview,
-            LocalDateTime nextReview,
-            double interval,
-            ReviewRating review,
-            double easeFactor,
-            String deckId
-    ) {}
-
-    public List<FlashCardEntity> listFlashCardsByDeck(String deckId) {
-        return flashCardRepository.findByDeckId(deckId);
-    }
-
-    public void deleteFlashCard(String flashCardId) {
-        flashCardRepository.deleteById(flashCardId);
-    }
 
     public FlashCardService(TextGenerationService textGenerationService, ImageGenerationService imageGenerationService,
                             AudioGenerationService audioGenerationService, FlashCardRepository flashCardRepository,
@@ -57,12 +40,24 @@ public class FlashCardService {
         this.reviewRepository = reviewRepository;
     }
 
-    public void updateFlashCard(String id, String front, String back, @Nullable String imagePath, @Nullable String audioPath) {
+    public List<FlashcardResponseDTO> listFlashCardsByDeck(String deckId) {
+        List<FlashCardEntity> flashCards = flashCardRepository.findByDeckId(deckId);
+
+        return flashCards.stream()
+                .map(FlashcardResponseDTO::flashFromEntity)
+                .collect(Collectors.toList());
+    }
+
+    public void deleteFlashCard(String flashCardId) {
+        flashCardRepository.deleteById(flashCardId);
+    }
+
+    public void updateFlashCard(String id, FlashcardRequestDTO dto) {
         flashCardRepository.findById(id).map(ent -> {
-            ent.setFront(front);
-            ent.setBack(back);
-            ent.setImagePath(imagePath);
-            ent.setAudioPath(audioPath);
+            ent.setFront(dto.getFront());
+            ent.setBack(dto.getBack());
+            ent.setImagePath(dto.getImagePath());
+            ent.setAudioPath(dto.getAudioPath());
             flashCardRepository.save(ent);
             System.out.println("FlashCard atualizado com sucesso!");
             return ent;
@@ -70,21 +65,27 @@ public class FlashCardService {
 
     }
 
-    public void generateFlashCard(String front, String back, @Nullable String imagePath, @Nullable String audioPath) {
+    public void generateFlashCard(String deckId, FlashcardRequestDTO dto) {
 
         LocalDateTime createdDate = LocalDateTime.now();
         LocalDateTime lastReview = createdDate;
         LocalDateTime nextReview = createdDate.plusMinutes(1);
-        double easeFactor = 2.5;
+
+        double easeFactor = deckRepository.findById(deckId)
+                .orElseThrow(() -> new RuntimeException("Deck não encontrado com id: " + deckId + "testando"))
+                .getEaseFactor();
+
         int interval = 1;
-        FlashCardEntity flashCardEntity = new FlashCardEntity(null, front, back, imagePath, audioPath, createdDate,lastReview, nextReview, interval, ReviewRating.BOM, easeFactor, null);
+
+        FlashCardEntity flashCardEntity = new FlashCardEntity(null, dto.getFront(), dto.getBack(), dto.getImagePath(), dto.getAudioPath(), createdDate,lastReview, nextReview, interval, ReviewRating.BOM, easeFactor, deckId);
         flashCardRepository.save(flashCardEntity);
         System.out.println("FlashCard salvo com sucesso!");
     }
 
-    public GeneratedFlashCard generateAiFlashCard(String prompt, String deckId) {
+    public FlashcardResponseDTO generateAiFlashCard(String prompt, String deckId) {
 
-        DeckEntity deckEntity = deckRepository.findById(deckId).orElseThrow();
+        DeckEntity deckEntity = deckRepository.findById(deckId)
+                .orElseThrow();
 
         String front;
         String back;
@@ -114,12 +115,15 @@ public class FlashCardService {
         LocalDateTime lastReview = createdDate;
         LocalDateTime nextReview = createdDate.plusMinutes(1);
         int interval = 1;
-        double easeFactor = 2;
+
+        double easeFactor = deckRepository.findById(deckId)
+                .orElseThrow(() -> new RuntimeException("Deck não encontrado com id: " + deckId))
+                .getEaseFactor();
 
         FlashCardEntity flashCardEntity = new FlashCardEntity(null, front, back, imagePath, audioPath,createdDate, lastReview, nextReview, interval, ReviewRating.BOM, easeFactor, deckId);
         flashCardRepository.save(flashCardEntity);
         System.out.println("FlashCard salvo com sucesso!");
-        return new GeneratedFlashCard(front, back, imagePath, audioPath, createdDate, lastReview, nextReview, interval, ReviewRating.BOM, easeFactor, deckId);
+        return new FlashcardResponseDTO(null, front, back, imagePath, audioPath, createdDate, lastReview, nextReview, interval, ReviewRating.BOM, easeFactor, deckId);
     }
 
 }

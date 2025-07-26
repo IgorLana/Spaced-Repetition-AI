@@ -1,6 +1,5 @@
 package com.spaced_repetition_ai.service;
 
-import com.spaced_repetition_ai.entity.DeckEntity;
 import com.spaced_repetition_ai.entity.FlashCardEntity;
 import com.spaced_repetition_ai.entity.ReviewEntity;
 import com.spaced_repetition_ai.model.ReviewRating;
@@ -82,17 +81,6 @@ public class ReviewService {
                 reviewRepository.save(reviewEntity);
 
                 System.out.println("FlashCard revisado com sucesso!");
-
-            //private String id;
-    //        private String deckId;
-      //      private String flashCardId;
-        //    private ReviewRating rating;
-          //  private LocalDateTime ReviewDate;
-            //private LocalDateTime NextReviewDate;
-    //        private int interval;
-      //      private double easeFactor;
-        //    private long timeSpent;
-
 
             } else {
             throw new EntityNotFoundException("FlashCard com ID " + id + " não encontrado.");

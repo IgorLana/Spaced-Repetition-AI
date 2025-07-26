@@ -1,14 +1,14 @@
 package com.spaced_repetition_ai.controller;
 
 
-import com.mongodb.lang.Nullable;
+import com.spaced_repetition_ai.dto.DeckRequestDTO;
 import com.spaced_repetition_ai.dto.DeckResponseDTO;
-import com.spaced_repetition_ai.entity.DeckEntity;
+import com.spaced_repetition_ai.dto.DeckUpdateDTO;
 import com.spaced_repetition_ai.entity.FlashCardEntity;
-import com.spaced_repetition_ai.model.DeckType;
-import com.spaced_repetition_ai.model.Language;
+
 import com.spaced_repetition_ai.service.DeckService;
 
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,34 +25,21 @@ public class DeckController {
         this.deckService = deckService;
     }
 
-    @PutMapping("/{id}") // Ou @PatchMapping para atualizações parciais
-    public ResponseEntity<FlashCardEntity> update(@PathVariable("id") String id, @RequestBody DeckResponseDTO dto) {
-        deckService.updateDeck(id, dto.description(), dto.name(), dto.targetLanguage(), dto.sourceLanguage(), dto.audioPrompt(),
-                dto.imagePrompt(), dto.textPrompt(), dto.audioPath(), dto.imagePath(), dto.easeFactor());
+    @PutMapping("/{id}")
+    public ResponseEntity<FlashCardEntity> update(@PathVariable("id") String id, @RequestBody @Valid DeckUpdateDTO dto) {
+        deckService.updateDeck(id, dto);
         return ResponseEntity.ok().build();
     }
 
     @GetMapping
-    public List<DeckEntity> getDecks() {
-        return deckService.getDecks();
+    public ResponseEntity<List<DeckResponseDTO>> getDecks() {
+        List<DeckResponseDTO> decks = deckService.getDecks();
+        return ResponseEntity.ok(decks);
     }
 
     @PostMapping
-    public void generateDeck(@RequestParam("name") String name,
-                             @RequestParam("description") String description,
-                             @RequestParam("targetLanguage") @Nullable Language targetLanguage,
-                             @RequestParam("sourceLanguage") @Nullable Language sourceLanguage,
-                             @RequestParam("audioPrompt") @Nullable String audioPrompt,
-                             @RequestParam("imagePrompt") @Nullable String imagePrompt,
-                             @RequestParam("textPrompt") @Nullable String textPrompt,
-                             @RequestParam("audioPath") @Nullable String audioPath,
-                             @RequestParam("imagePath") @Nullable String imagePath,
-                             @RequestParam(value = "easeFactor", required = false)  Double easeFactor,
-                             @RequestParam("generateImage") @Nullable boolean generateImage,
-                             @RequestParam("generateAudio") @Nullable boolean generateAudio,
-                             @RequestParam("deckType") @Nullable DeckType deckType
-                             ){
-            deckService.createDeck(name, description, targetLanguage, sourceLanguage, audioPrompt, imagePrompt, textPrompt, audioPath, imagePath, easeFactor, generateImage, generateAudio, deckType);
+    public void generateDeck(@RequestBody @Valid DeckRequestDTO dto ){
+            deckService.createDeck(dto);
     }
 
 

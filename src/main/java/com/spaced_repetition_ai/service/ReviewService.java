@@ -2,11 +2,15 @@ package com.spaced_repetition_ai.service;
 
 import com.spaced_repetition_ai.entity.FlashCardEntity;
 import com.spaced_repetition_ai.entity.ReviewEntity;
+import com.spaced_repetition_ai.entity.UserEntity;
 import com.spaced_repetition_ai.model.ReviewRating;
 import com.spaced_repetition_ai.repository.DeckRepository;
 import com.spaced_repetition_ai.repository.FlashCardRepository;
 import com.spaced_repetition_ai.repository.ReviewRepository;
+import com.spaced_repetition_ai.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -20,17 +24,21 @@ public class ReviewService {
     private final FlashCardRepository flashCardRepository;
     private final DeckRepository deckRepository;
     private final ReviewRepository reviewRepository;
+    private final UserRepository userRepository;
 
-    public ReviewService(FlashCardRepository flashCardRepository, DeckRepository deckRepository, ReviewRepository reviewRepository) {
+    public ReviewService(FlashCardRepository flashCardRepository, DeckRepository deckRepository, ReviewRepository reviewRepository, UserRepository userRepository) {
 
         this.flashCardRepository = flashCardRepository;
         this.deckRepository = deckRepository;
         this.reviewRepository = reviewRepository;
+        this.userRepository = userRepository;
     }
 
-    public void reviewFlashCard(String id, ReviewRating rating){
+    public void reviewFlashCard(Long id, ReviewRating rating){
 
-        Optional<FlashCardEntity> optionalCard = flashCardRepository.findById(id);
+        UserEntity usuarioLogado = getUsuarioLogado();
+
+        Optional<FlashCardEntity> optionalCard = flashCardRepository.findByIdAndDeckUserId(id, getUsuarioLogado().getId());
 
         if (optionalCard.isPresent()) {
             FlashCardEntity card = optionalCard.get();
@@ -67,8 +75,8 @@ public class ReviewService {
                 card.setRating(rating);
                 flashCardRepository.save(card);
 
-                String deckId = card.getDeckId();
-                String flashCardId = card.getId();
+                Long deckId = card.getDeck().getId();
+                Long flashCardId = card.getId();
                 LocalDateTime reviewDate = LocalDateTime.now();
                 ReviewRating reviewRating = card.getRating();
                 LocalDateTime nextReviewDate = card.getNextReview();
@@ -89,8 +97,18 @@ public class ReviewService {
 
     }
 
-    public List<FlashCardEntity> listFlashCardsToReview(String deckId) {
-        return flashCardRepository.findByDeckIdAndNextReviewBeforeOrderByNextReview(deckId, LocalDateTime.now());
+    public List<FlashCardEntity> listFlashCardsToReview(Long deckId) {
+
+        UserEntity usuarioLogado = getUsuarioLogado();
+
+        return flashCardRepository.findReviewableCardsByDeckAndUser(deckId, getUsuarioLogado().getId(), LocalDateTime.now());
+
+    }
+
+    private UserEntity getUsuarioLogado() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByUsername(username) // Assumindo que findByUsername agora é findByEmail
+                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + username));
     }
 
 

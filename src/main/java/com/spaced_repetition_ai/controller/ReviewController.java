@@ -20,13 +20,13 @@ public class        ReviewController {
     }
 
     @PostMapping
-    public void generate(@RequestParam("id") String id,
+    public void generate(@RequestParam("id") Long id,
                                  @RequestParam("review") ReviewRating rating) {
         reviewService.reviewFlashCard(id, rating);
     }
 
     @GetMapping
-    public ResponseEntity<List<FlashCardEntity>> CardToReview(@RequestParam("id") String deckId ){
+    public ResponseEntity<List<FlashCardEntity>> CardToReview(@RequestParam("id") Long deckId ){
         List<FlashCardEntity> toReview = reviewService.listFlashCardsToReview(deckId);
 
         if(toReview.isEmpty()){

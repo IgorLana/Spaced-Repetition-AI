@@ -26,7 +26,7 @@ public class DeckController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<FlashCardEntity> update(@PathVariable("id") String id, @RequestBody @Valid DeckUpdateDTO dto) {
+    public ResponseEntity<FlashCardEntity> update(@PathVariable("id") Long id, @RequestBody @Valid DeckUpdateDTO dto) {
         deckService.updateDeck(id, dto);
         return ResponseEntity.ok().build();
     }
@@ -38,14 +38,14 @@ public class DeckController {
     }
 
     @PostMapping
-    public void generateDeck(@RequestBody @Valid DeckRequestDTO dto ){
+    public void generateDeck(@RequestBody @Valid DeckRequestDTO dto){
             deckService.createDeck(dto);
     }
 
 
 
     @DeleteMapping("/{deckId}")
-    public void deleteDeck(@PathVariable("deckId") String deckId) {
+    public void deleteDeck(@PathVariable("deckId") Long deckId) {
         deckService.removerDeck(deckId);
     }
 

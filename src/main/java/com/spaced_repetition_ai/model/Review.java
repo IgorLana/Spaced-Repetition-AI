@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 public class Review {
-    private String id;
+    private Long id;
     private String deckId;
     private String flashCardId;
     private ReviewRating rating;

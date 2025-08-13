@@ -23,8 +23,8 @@ public class DefaultPrompts {
                 
                 ```json
                 {
-                  "front": "Texto principal ou conteúdo original aqui",
-                  "back": "Texto complementar aqui contendo ** Palavra ou Frase ** em negrito Markdown"
+                  "front": "Texto principal ou conteúdo original aqui contendo  ** Palavra ou Frase de destaque ** em negrito Markdown ",
+                  "back": "Texto complementar aqui contendo ** Palavra ou Frase de destaque ** em negrito Markdown"
                 }
                 """;
 
@@ -51,10 +51,12 @@ public class DefaultPrompts {
                 - Língua nativa do usuário: português
                 
                 ✅ Comportamento esperado:
-                - Frase gerada: *"The **dog** is sleeping on the bed."*
-                - Tradução: *"O **cachorro** está dormindo na cama."*
+                - Frase gerada: "The **dog** is sleeping on the bed."
+                - Tradução: "O **cachorro** está dormindo na cama."
                 
                 ---
+                
+                O Markdown na palavra/frase de entrada e saida é obrigatorio utilizando o ** Palavra/Frase **
                 
                 💬 A partir de agora, aguarde a palavra ou expressão a ser processada.
                 

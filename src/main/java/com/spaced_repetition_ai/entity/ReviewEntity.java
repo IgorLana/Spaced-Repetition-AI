@@ -2,26 +2,26 @@ package com.spaced_repetition_ai.entity;
 
 
 import com.spaced_repetition_ai.model.ReviewRating;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import jakarta.persistence.Id;
 
 import java.time.LocalDateTime;
 
-@Document(collection = "Review")
+@Entity
+@Table(name = "reviews")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class ReviewEntity {
 
     @Id
-    private String id;
-    @ManyToOne
-    private String deckId;
-    private String flashCardId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private Long deckId;
+    private Long flashCardId;
     private ReviewRating rating;
     private LocalDateTime ReviewDate;
     private LocalDateTime NextReviewDate;

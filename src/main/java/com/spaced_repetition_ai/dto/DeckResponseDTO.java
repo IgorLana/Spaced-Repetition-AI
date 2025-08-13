@@ -5,7 +5,7 @@ import com.spaced_repetition_ai.model.DeckType;
 import com.spaced_repetition_ai.model.Language;
 
 public record DeckResponseDTO(
-        String id,
+        Long id,
         String name,
         String description,
         Language targetLanguage,

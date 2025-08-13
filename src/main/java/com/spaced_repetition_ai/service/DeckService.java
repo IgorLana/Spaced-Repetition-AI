@@ -5,10 +5,14 @@ import com.spaced_repetition_ai.dto.DeckResponseDTO;
 import com.spaced_repetition_ai.dto.DeckUpdateDTO;
 import com.spaced_repetition_ai.entity.DeckEntity;
 
+import com.spaced_repetition_ai.entity.UserEntity;
 import com.spaced_repetition_ai.model.DeckType;
 import com.spaced_repetition_ai.model.Language;
 import com.spaced_repetition_ai.repository.DeckRepository;
+import com.spaced_repetition_ai.repository.UserRepository;
 import com.spaced_repetition_ai.util.DefaultPrompts;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,13 +24,18 @@ import java.util.stream.Collectors;
 public class DeckService {
 
     private final DeckRepository deckRepository;
+    private final UserRepository userRepository;
 
-    public DeckService(DeckRepository deckRepository) {
+    public DeckService(DeckRepository deckRepository, UserRepository userRepository) {
         this.deckRepository = deckRepository;
+        this.userRepository = userRepository;
     }
 
     public List<DeckResponseDTO> getDecks() {
-        List<DeckEntity> decks = deckRepository.findAll();
+        UserEntity usuarioLogado = getUsuarioLogado();
+
+        List<DeckEntity> decks = deckRepository.findByUserId(usuarioLogado.getId());
+
         System.out.println("Encontrados " + decks.size() + " decks.");
         return decks.stream()
                 .map(DeckResponseDTO::fromEntity)
@@ -34,10 +43,10 @@ public class DeckService {
     }
 
 
-    public void updateDeck(String id, DeckUpdateDTO dto) {
+    public void updateDeck(Long id, DeckUpdateDTO dto) {
 
-
-        deckRepository.findById(id).map(ent -> {
+        UserEntity usuarioLogado = getUsuarioLogado();
+        deckRepository.findByUserIdAndId(usuarioLogado.getId(), id).map(ent -> {
                     ent.setDescription(dto.getDescription());
                     ent.setName(dto.getName());
                     ent.setTargetLanguage(dto.getTargetLanguage());
@@ -51,19 +60,28 @@ public class DeckService {
             deckRepository.save(ent);
             System.out.println("Deck atualizado com sucesso!");
             return ent;
-        });
+        }).orElseThrow(() -> new RuntimeException("Deck não encontrado ou não pertence ao usuário."));
 
     }
 
 
-    public void removerDeck(String deckId) {
-    deckRepository.deleteById(deckId);
+    public void removerDeck(Long deckId) {
+
+        UserEntity usuarioLogado = getUsuarioLogado();
+        DeckEntity deck = deckRepository.findByUserIdAndId(usuarioLogado.getId(), deckId)
+                .orElseThrow(() -> new RuntimeException("Deck não encontrado ou não pertence ao usuário."));
+
+        deckRepository.deleteById(deck.getId());
     }
 
 
     public void createDeck(DeckRequestDTO dto){
+
+        UserEntity usuarioLogado = getUsuarioLogado();
+
         DeckEntity deckEntity = new DeckEntity();
 
+        deckEntity.setUser(usuarioLogado);
         deckEntity.setName(dto.getName());
         deckEntity.setDescription(dto.getDescription());
         deckEntity.setTargetLanguage(Optional.ofNullable(dto.getTargetLanguage()).orElse(Language.INGLES_EUA));
@@ -87,7 +105,11 @@ public class DeckService {
 
     }
 
-
+    private UserEntity getUsuarioLogado() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByUsername(username) // Assumindo que findByUsername agora é findByEmail
+                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + username));
+    }
 
 
 }

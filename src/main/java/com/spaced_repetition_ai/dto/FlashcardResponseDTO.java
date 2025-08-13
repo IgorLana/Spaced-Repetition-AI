@@ -6,7 +6,7 @@ import com.spaced_repetition_ai.model.ReviewRating;
 import java.time.LocalDateTime;
 
 public record FlashcardResponseDTO (
-        String id,
+        Long id,
         String frontText,
         String backText,
         String imagePath,
@@ -17,7 +17,7 @@ public record FlashcardResponseDTO (
         double interval,
         ReviewRating review,
         double easeFactor,
-        String deckId
+        Long deckId
 ) {
     public static FlashcardResponseDTO flashFromEntity(FlashCardEntity flashCardEntity) {
         return new FlashcardResponseDTO(
@@ -32,7 +32,7 @@ public record FlashcardResponseDTO (
                 flashCardEntity.getInterval(),
                 flashCardEntity.getRating(),
                 flashCardEntity.getEaseFactor(),
-                flashCardEntity.getDeckId()
+                flashCardEntity.getDeck().getId()
         );
     }
 

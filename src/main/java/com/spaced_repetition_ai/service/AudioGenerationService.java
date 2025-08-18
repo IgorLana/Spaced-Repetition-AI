@@ -3,7 +3,13 @@ package com.spaced_repetition_ai.service;
 import com.google.common.collect.ImmutableList;
 import com.google.genai.Client;
 import com.google.genai.types.*;
+import com.spaced_repetition_ai.entity.UserEntity;
+import com.spaced_repetition_ai.repository.UserRepository;
 import com.spaced_repetition_ai.storage.AudioStorage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MimeType;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,14 +25,27 @@ public class AudioGenerationService {
 
     private final Client genaiClient;
     private final AudioStorage storageGenAi;
+    private final UserRepository userRepository;
+    private static final Logger log = LoggerFactory.getLogger(FlashCardService.class);
 
-    public AudioGenerationService(Client genaiClient, AudioStorage storageGenAi) {
+    public AudioGenerationService(Client genaiClient, AudioStorage storageGenAi, UserRepository userRepository) {
         this.genaiClient = genaiClient;
         this.storageGenAi = storageGenAi;
+        this.userRepository = userRepository;
     }
 
 
     public List<String> generateAudio(String prompt, @Nullable List<MultipartFile> audios) {
+
+        UserEntity usuarioLogado = getUsuarioLogado();
+
+        if (usuarioLogado.getBalance() < 10){
+            return List.of("Saldo insuficiente para gerar audio.");
+        }
+
+        if (prompt.isBlank()){
+            return List.of("Nao é possivel gerar audio com prompt vazio.");
+        }
 
         List<Part> parts = new ArrayList<>();
         parts.add(Part.fromText(prompt));
@@ -55,7 +74,7 @@ public class AudioGenerationService {
                                         VoiceConfig.builder()
                                                 .prebuiltVoiceConfig(
                                                         PrebuiltVoiceConfig.builder()
-                                                                .voiceName(voiceName) // String como "pt-BR-FabricioNeural"
+                                                                .voiceName(voiceName)
                                                                 .build()
                                                 )
                                                 .build()
@@ -64,16 +83,24 @@ public class AudioGenerationService {
                 )
                 .build();
 
+        try{
         GenerateContentResponse response = this.genaiClient.models.generateContent(this.audioGenerationModel, content, config);
         List<Audio> generatedAudio = getAudio(response);
         List<String> savedAudioPath = new ArrayList<>();
+
         for (Audio audio : generatedAudio) {
             String audioName = audio.audioName().replace("\\.[a-zA-Z0-9]+$", "") + ".wav";
             String fullAudioPath = this.storageGenAi.StorageWav(audioName, audio.audioData());
             savedAudioPath.add(fullAudioPath);
             System.out.println("Audio salvo: %s".formatted(fullAudioPath));
         }
+        usuarioLogado.setBalance(usuarioLogado.getBalance() - 10);
         return savedAudioPath;
+
+        }catch (Exception e){
+            log.error("API do Google fora do ar!", e);
+            return List.of("Ocorreu um erro ao gerar o audio. Tente novamente.");
+        }
     }
 
     private List<Audio> getAudio(GenerateContentResponse response) {
@@ -99,5 +126,10 @@ public class AudioGenerationService {
 
     record Audio(String audioName, byte[] audioData, String audioMimeType){}
 
+    private UserEntity getUsuarioLogado() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByUsername(username) // Assumindo que findByUsername agora é findByEmail
+                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + username));
+    }
 
 }

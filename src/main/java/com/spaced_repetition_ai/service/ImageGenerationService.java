@@ -6,8 +6,15 @@ import com.google.genai.types.Content;
 import com.google.genai.types.GenerateContentConfig;
 import com.google.genai.types.GenerateContentResponse;
 import com.google.genai.types.Part;
+import com.spaced_repetition_ai.entity.UserEntity;
+import com.spaced_repetition_ai.exception.DatabaseException;
+import com.spaced_repetition_ai.repository.UserRepository;
 import com.spaced_repetition_ai.storage.ImageStorage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.lang.Nullable;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MimeType;
 import org.springframework.web.multipart.MultipartFile;
@@ -23,17 +30,29 @@ public class ImageGenerationService {
 
     private final Client genaiClient;
     private final ImageStorage imageStorage;
+    private final UserRepository userRepository;
+    private static final Logger log = LoggerFactory.getLogger(FlashCardService.class);
 
-    public ImageGenerationService(Client genaiClient, ImageStorage imageStorage) {
+    public ImageGenerationService(Client genaiClient, ImageStorage imageStorage, UserRepository userRepository) {
         this.genaiClient = genaiClient;
         this.imageStorage = imageStorage;
+        this.userRepository = userRepository;
     }
 
 
 
     public List<String> generateImage(String prompt, @Nullable List<MultipartFile> images){
 
-        System.out.println("Imagem a ser gerada: %s".formatted(prompt));
+        UserEntity usuarioLogado = getUsuarioLogado();
+
+        if (usuarioLogado.getBalance() < 20){
+            return List.of("Saldo insuficiente para gerar imagem.");
+        }
+
+        if (prompt.isBlank()){
+            return List.of("Nao é possivel gerar imagem com prompt vazio.");
+        }
+
 
         List<Part> parts = new ArrayList<>();
         parts.add(Part.fromText(prompt));
@@ -57,8 +76,9 @@ public class ImageGenerationService {
                 .responseModalities(List.of("Text", "Image"))
                 .build();
 
-        GenerateContentResponse response = this.genaiClient.models.generateContent(imageGenerationModel, content, config);
-        List<Image> generateImage = getImages(response);
+        try{
+            GenerateContentResponse response = this.genaiClient.models.generateContent(imageGenerationModel, content, config);
+            List<Image> generateImage = getImages(response);
 
         List<String> savedImagePath = new ArrayList<>();
         for (Image image : generateImage) {
@@ -66,7 +86,13 @@ public class ImageGenerationService {
             savedImagePath.add(fullPath);
             System.out.println("Imagem salva: %s".formatted(fullPath));
         }
+        usuarioLogado.setBalance(usuarioLogado.getBalance() - 20);
         return savedImagePath;
+
+        }catch (Exception e){
+            log.error("API do Google fora do ar!", e);
+            return List.of("Ocorreu um erro ao gerar a imagem. Tente novamente.");
+        }
     }
 
     private List<Image> getImages(GenerateContentResponse response) {
@@ -92,4 +118,12 @@ public class ImageGenerationService {
 
     record Image(String imageName, byte[] imageBytes, String mimeType) {}
 
+    private UserEntity getUsuarioLogado() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByUsername(username) // Assumindo que findByUsername agora é findByEmail
+                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + username));
+    }
+
 }
+
+

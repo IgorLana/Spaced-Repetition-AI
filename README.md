@@ -73,7 +73,7 @@ Siga os passos abaixo para configurar e executar o projeto em seu ambiente local
 
 **1. Clone o Repositório**
 ```bash
-git clone [https://URL-DO-SEU-REPOSITORIO.git](https://URL-DO-SEU-REPOSITORIO.git)
+git clone [https://github.com/IgorLana/Spaced-Repetition-AI.git]
 cd spaced-repetition-ai
 ```
 

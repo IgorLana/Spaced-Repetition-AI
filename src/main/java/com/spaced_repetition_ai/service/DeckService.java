@@ -79,6 +79,13 @@ public class DeckService {
 
         UserEntity usuarioLogado = getUsuarioLogado();
 
+        if (dto.getName() == null || dto.getName().trim().isEmpty()) {
+            throw new IllegalArgumentException("O campo nome está vazio.");
+        }
+        if (dto.getDescription() == null || dto.getDescription().trim().isEmpty()) {
+            throw new IllegalArgumentException("O campo descrição está vazio.");
+        }
+
         DeckEntity deckEntity = new DeckEntity();
 
         deckEntity.setUser(usuarioLogado);

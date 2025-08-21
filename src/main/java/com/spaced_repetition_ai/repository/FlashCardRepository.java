@@ -1,5 +1,6 @@
 package com.spaced_repetition_ai.repository;
 
+import com.spaced_repetition_ai.entity.DeckEntity;
 import com.spaced_repetition_ai.entity.FlashCardEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -28,4 +29,5 @@ extends JpaRepository<FlashCardEntity, Long> {
        Optional<FlashCardEntity> findByIdAndDeckUserId(@Param("flashCardId") Long flashCardId, @Param("userId") Long userId);
 
 
+    Long deck(DeckEntity deck);
 }

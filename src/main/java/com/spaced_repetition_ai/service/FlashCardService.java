@@ -88,8 +88,10 @@ public class FlashCardService {
     public void updateFlashCard(Long id, FlashcardRequestDTO dto) {
         UserEntity usuarioLogado = getUsuarioLogado();
 
-        FlashCardEntity ent = flashCardRepository.findByIdAndDeckUserId(id, usuarioLogado.getId())
-                        .orElseThrow(() -> new NotFoundException("FlashCard não encontrado com id: " + id));
+        if(dto.getFront() == null || dto.getFront().trim().isEmpty()
+        || dto.getBack() == null || dto.getBack().trim().isEmpty()) {
+            FlashCardEntity ent = flashCardRepository.findByIdAndDeckUserId(id, usuarioLogado.getId())
+                    .orElseThrow(() -> new NotFoundException("FlashCard não encontrado com id: " + id));
 
             ent.setFront(dto.getFront());
             ent.setBack(dto.getBack());
@@ -99,9 +101,12 @@ public class FlashCardService {
             try {
                 flashCardRepository.save(ent);
                 log.info("FlashCard atualizado com sucesso!");
-            }catch (Exception e){
+            } catch (Exception e) {
                 throw new DatabaseException("Erro ao atualizar o flashcard", e);
             }
+        }else{
+            throw new IllegalArgumentException("O FlashCard não pode ser atualizado com apenas um dos campos: front e back.");
+        }
     }
 
     public void generateFlashCard(Long deckId, FlashcardRequestDTO dto) {
@@ -144,7 +149,7 @@ public class FlashCardService {
                 .orElseThrow(() -> new RuntimeException("Deck não encontrado ou não pertence ao usuário."));
 
         if(prompt == null || prompt.trim().isEmpty()){
-            throw new IllegalArgumentException("A frente do flashcard não pose ser vazia.");
+            throw new IllegalArgumentException("O prompt do flashcard não pose ser vazia.");
         }
 
         String front;
@@ -276,8 +281,10 @@ public class FlashCardService {
     }
 
     public void saveStandardFlashCards(String prompt, String front, String back, String imagePath, String audioPath) {
-        StandardFlashCardEntity standardFlashCardEntity = new StandardFlashCardEntity(null, front, back, imagePath, audioPath, prompt);
-        standardFlashCardRepository.save(standardFlashCardEntity);
+        if(prompt != null && !prompt.trim().isEmpty()){
+            StandardFlashCardEntity standardFlashCardEntity = new StandardFlashCardEntity(null, front, back, imagePath, audioPath, prompt);
+            standardFlashCardRepository.save(standardFlashCardEntity);
+        }
     }
 
 

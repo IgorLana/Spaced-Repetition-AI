@@ -45,7 +45,7 @@ public class ImageGenerationService {
 
         UserEntity usuarioLogado = getUsuarioLogado();
 
-        if (usuarioLogado.getBalance() < 20){
+        if (usuarioLogado.getBalance() < 5){
             return List.of("Saldo insuficiente para gerar imagem.");
         }
 
@@ -86,7 +86,7 @@ public class ImageGenerationService {
             savedImagePath.add(fullPath);
             System.out.println("Imagem salva: %s".formatted(fullPath));
         }
-        usuarioLogado.setBalance(usuarioLogado.getBalance() - 20);
+        usuarioLogado.setBalance(usuarioLogado.getBalance() - 5);
         return savedImagePath;
 
         }catch (Exception e){
@@ -119,9 +119,9 @@ public class ImageGenerationService {
     record Image(String imageName, byte[] imageBytes, String mimeType) {}
 
     private UserEntity getUsuarioLogado() {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        return userRepository.findByUsername(username) // Assumindo que findByUsername agora é findByEmail
-                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + username));
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByEmail(email) // Assumindo que findByUsername agora é findByEmail
+                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + email));
     }
 
 }

@@ -10,7 +10,7 @@ import java.nio.file.Paths;
 @Service
 public class ImageStorage {
 
-    private final String folder = "Storage/";
+    private final String folder = "A:\\DeJavan\\spaced-repetition-ai\\Storage/";
 
     public String saveImage(String imageName, byte[] imageData) {
         Path path = Paths.get(folder + imageName);

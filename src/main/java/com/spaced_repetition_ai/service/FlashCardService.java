@@ -203,7 +203,7 @@ public class FlashCardService {
         String imagePath = null;
 
         //Verificação de saldo
-        if(usuarioLogado.getBalance() < 30 && deckEntity.getGenerateImage() & deckEntity.getGenerateAudio()){
+        if(usuarioLogado.getBalance() < 6 && deckEntity.getGenerateImage() & deckEntity.getGenerateAudio()){
                 FlashCardEntity flashCardEntity = new FlashCardEntity(null, front, back, imagePath, audioPath,createdDate, lastReview, nextReview, interval, ReviewRating.BOM, easeFactor, deckEntity);
                 try {
                     flashCardRepository.save(flashCardEntity);
@@ -225,7 +225,7 @@ public class FlashCardService {
         }
 
         if (deckEntity.getGenerateImage()) {
-            if(usuarioLogado.getBalance() >= 20) {
+            if(usuarioLogado.getBalance() >= 5) {
                 try {
                     List<String> imagePaths = imageGenerationService.generateImage(deckEntity.getImagePrompt() + prompt, null);
                     if (imagePaths != null && !imagePaths.isEmpty()) {
@@ -242,7 +242,7 @@ public class FlashCardService {
         }
 
         if (deckEntity.getGenerateAudio()) {
-            if(usuarioLogado.getBalance() >= 10) {
+            if(usuarioLogado.getBalance() >= 1) {
                 try {
 
                     List<String> audioPaths = audioGenerationService.generateAudio(deckEntity.getAudioPrompt() + front, null);
@@ -281,7 +281,7 @@ public class FlashCardService {
     }
 
     public void saveStandardFlashCards(String prompt, String front, String back, String imagePath, String audioPath) {
-        if(prompt != null && !prompt.trim().isEmpty()){
+        if(prompt != null && !prompt.trim().isEmpty() && imagePath != null  && audioPath != null){
             StandardFlashCardEntity standardFlashCardEntity = new StandardFlashCardEntity(null, front, back, imagePath, audioPath, prompt);
             standardFlashCardRepository.save(standardFlashCardEntity);
         }
@@ -289,9 +289,9 @@ public class FlashCardService {
 
 
     private UserEntity getUsuarioLogado() {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        return userRepository.findByUsername(username) // Assumindo que findByUsername agora é findByEmail
-                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + username));
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByEmail(email) // Assumindo que findByUsername agora é findByEmail
+                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + email));
     }
 
 

@@ -1,7 +1,7 @@
 package com.spaced_repetition_ai.dto;
 
 public record RegisterRequest(
-        String username,
+        String name,
         String password,
         String email
 ) {

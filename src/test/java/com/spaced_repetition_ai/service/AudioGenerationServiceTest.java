@@ -56,7 +56,7 @@ class AudioGenerationServiceTest {
     @BeforeEach
     void setUp() throws Exception {
         testUser = new UserEntity();
-        testUser.setUsername("testuser@example.com");
+        testUser.setEmail("testuser@example.com");
 
         // Usa reflection para injetar o mock no campo final do genaiClient
         Field modelsField = Client.class.getDeclaredField("models");
@@ -74,7 +74,7 @@ class AudioGenerationServiceTest {
     @Test
     void generateAudio_ComSaldoSuficiente_DeveGerarAudio() {
         testUser.setBalance(100);
-        when(userRepository.findByUsername(testUser.getUsername())).thenReturn(Optional.of(testUser));
+        when(userRepository.findByEmail(testUser.getEmail())).thenReturn(Optional.of(testUser));
         when(mockApiResponse.parts()).thenReturn(ImmutableList.of(mockPart));
         when(mockPart.inlineData()).thenReturn(Optional.of(mockBlob));
         when(mockBlob.mimeType()).thenReturn(Optional.of("audio/mpeg"));
@@ -91,14 +91,14 @@ class AudioGenerationServiceTest {
         assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals(caminhoFalso, result.get(0));
-        assertEquals(90, testUser.getBalance());
+        assertEquals(99, testUser.getBalance());
         verify(audioStorage, times(1)).StorageWav(anyString(), any(byte[].class));
     }
 
     @Test
     void generateAudio_ComSaldoInsuficiente_DeveRetornarMensagemDeErro() {
         testUser.setBalance(5);
-        when(userRepository.findByUsername(testUser.getUsername())).thenReturn(Optional.of(testUser));
+        when(userRepository.findByEmail(testUser.getEmail())).thenReturn(Optional.of(testUser));
 
         List<String> result = audioGenerationService.generateAudio("um prompt", null);
 
@@ -113,7 +113,7 @@ class AudioGenerationServiceTest {
     @Test
     void generateAudio_ComPromptVazio_DeveRetornarMensagemDeErro() {
         testUser.setBalance(100);
-        when(userRepository.findByUsername(testUser.getUsername())).thenReturn(Optional.of(testUser));
+        when(userRepository.findByEmail(testUser.getEmail())).thenReturn(Optional.of(testUser));
 
         List<String> result = audioGenerationService.generateAudio("", null);
 
@@ -127,7 +127,7 @@ class AudioGenerationServiceTest {
     @Test
     void generateAudio_ErroNaAPI_DeveRetornarMensagemDeErro() {
         testUser.setBalance(100);
-        when(userRepository.findByUsername(anyString())).thenReturn(Optional.of(testUser));
+        when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(testUser));
 
         when(mockModels.generateContent(anyString(), any(Content.class), any(GenerateContentConfig.class)))
                 .thenThrow(new RuntimeException("Ocorreu um erro ao gerar a imagem. Tente novamente."));

@@ -62,7 +62,7 @@ class FlashCardServiceTest {
     void setUp() throws Exception {
         loggedInUser = new UserEntity();
         loggedInUser.setId(1L);
-        loggedInUser.setUsername("testuser");
+        loggedInUser.setEmail("testuser");
 
         deckEntity = new DeckEntity();
         deckEntity.setId(10L);
@@ -84,7 +84,7 @@ class FlashCardServiceTest {
         when(securityContext.getAuthentication()).thenReturn(authentication);
         SecurityContextHolder.setContext(securityContext);
         when(authentication.getName()).thenReturn("testuser");
-        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(loggedInUser));
+        when(userRepository.findByEmail("testuser")).thenReturn(Optional.of(loggedInUser));
     }
 
     @Test
@@ -144,11 +144,11 @@ class FlashCardServiceTest {
 
         verify(deckRepository, never()).findByUserIdAndId(anyLong(), anyLong());
         verify(flashCardRepository, never()).save(any(FlashCardEntity.class));
-        verify(userRepository, never()).findByUsername(anyString());
+        verify(userRepository, never()).findByEmail(anyString());
         verify(deckRepository, never()).save(any(DeckEntity.class));
         verify(userRepository, never()).save(any(UserEntity.class));
         verify(deckRepository, never()).findByUserIdAndId(anyLong(), anyLong());
-        verify(userRepository, never()).findByUsername(anyString());
+        verify(userRepository, never()).findByEmail(anyString());
     }
 
     @Test
@@ -221,11 +221,11 @@ class FlashCardServiceTest {
 
         verify(deckRepository, never()).findByUserIdAndId(anyLong(), anyLong());
         verify(flashCardRepository, never()).save(any(FlashCardEntity.class));
-        verify(userRepository, never()).findByUsername(anyString());
+        verify(userRepository, never()).findByEmail(anyString());
         verify(deckRepository, never()).save(any(DeckEntity.class));
         verify(userRepository, never()).save(any(UserEntity.class));
         verify(deckRepository, never()).findByUserIdAndId(anyLong(), anyLong());
-        verify(userRepository, never()).findByUsername(anyString());
+        verify(userRepository, never()).findByEmail(anyString());
     }
 
     @Test

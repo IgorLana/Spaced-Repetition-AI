@@ -16,7 +16,7 @@ import java.nio.file.Paths;
 public class AudioStorage {
 
 
-    private final String folder = "Storage/";
+    private final String folder = "A:\\DeJavan\\spaced-repetition-ai\\Storage/";
 
     public String StorageWav(String audioName, byte[] audioData){
         AudioFormat format = new AudioFormat(

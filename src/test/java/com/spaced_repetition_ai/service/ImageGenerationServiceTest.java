@@ -54,7 +54,7 @@ class ImageGenerationServiceTest {
     @BeforeEach
     void setUp() throws Exception {
         testUser = new UserEntity();
-        testUser.setUsername("testuser@example.com");
+        testUser.setEmail("testuser@example.com");
 
         // Usa reflection para injetar o mock no campo final do genaiClient
         Field modelsField = Client.class.getDeclaredField("models");
@@ -71,7 +71,7 @@ class ImageGenerationServiceTest {
     @Test
     void generateImage_comSaldoSuficiente_deveGerarImagem() {
         testUser.setBalance(100);
-        when(userRepository.findByUsername(anyString())).thenReturn(Optional.of(testUser));
+        when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(testUser));
 
         when(mockApiResponse.parts()).thenReturn(ImmutableList.of(mockPart));
 
@@ -98,7 +98,7 @@ class ImageGenerationServiceTest {
     @Test
     void naoDeveGerarNada_SaldoInsuficiente (){
         testUser.setBalance(10);
-        when(userRepository.findByUsername(anyString())).thenReturn(Optional.of(testUser));
+        when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(testUser));
 
         List<String> result = imageGenerationService.generateImage("um prompt", null);
 
@@ -115,7 +115,7 @@ class ImageGenerationServiceTest {
     @Test
     void naoDeveGerarNada_PromptVazio (){
         testUser.setBalance(100);
-        when(userRepository.findByUsername(anyString())).thenReturn(Optional.of(testUser));
+        when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(testUser));
 
         List<String> result = imageGenerationService.generateImage("", null);
 
@@ -131,7 +131,7 @@ class ImageGenerationServiceTest {
     void generateImage_comSaldoSuficiente_OptionalListaDeImagemVazia_deveGerarImagem() {
 
         testUser.setBalance(100);
-        when(userRepository.findByUsername(anyString())).thenReturn(Optional.of(testUser));
+        when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(testUser));
 
         when(mockApiResponse.parts()).thenReturn(ImmutableList.of(mockPart));
 
@@ -158,7 +158,7 @@ class ImageGenerationServiceTest {
     @Test
     void generateImagem_ErroNaAPI_DeveRetornarMensagemDeErro() {
         testUser.setBalance(100);
-        when(userRepository.findByUsername(anyString())).thenReturn(Optional.of(testUser));
+        when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(testUser));
 
         when(mockModels.generateContent(anyString(), any(Content.class), any(GenerateContentConfig.class)))
                 .thenThrow(new RuntimeException("Ocorreu um erro ao gerar a imagem. Tente novamente."));

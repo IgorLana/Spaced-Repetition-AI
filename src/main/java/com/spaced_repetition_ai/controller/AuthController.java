@@ -1,5 +1,6 @@
 package com.spaced_repetition_ai.controller;
 
+import com.spaced_repetition_ai.dto.AuthRequestDTO;
 import com.spaced_repetition_ai.dto.AuthResponse;
 import com.spaced_repetition_ai.dto.RegisterRequest;
 import com.spaced_repetition_ai.entity.UserEntity;
@@ -28,7 +29,7 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest request){
         var user = UserEntity.builder()
-                .username(request.username())
+                .name(request.name())
                 .email(request.email())
                 .password(passwordEncoder.encode(request.password()))
                 .role(Role.USER)
@@ -40,14 +41,14 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> authenticate(@RequestBody RegisterRequest request){
+    public ResponseEntity<AuthResponse> authenticate(@RequestBody AuthRequestDTO request){
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        request.username(),
+                        request.email(),
                         request.password()
                 )
         );
-        var user = userRepository.findByUsername(request.username())
+        var user = userRepository.findByEmail(request.email())
                 .orElseThrow();
         var jwtToken = jwtService.generateToken(user);
         return ResponseEntity.ok(new AuthResponse(jwtToken));

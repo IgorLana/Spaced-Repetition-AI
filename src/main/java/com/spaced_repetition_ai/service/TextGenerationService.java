@@ -15,13 +15,10 @@ import java.time.format.DateTimeFormatter;
 public class TextGenerationService {
 
     private final Client genaiClient;
-    private final AudioGenerationService audioGenAiService;
-    private final ImageGenerationService imageGenAiService;
+
 
     public TextGenerationService(Client genaiClient, AudioGenerationService audioGenAiService, ImageGenerationService imageGenAiService) {
         this.genaiClient = genaiClient;
-        this.audioGenAiService = audioGenAiService;
-        this.imageGenAiService = imageGenAiService;
     }
 
     public FlashCard generateTextFromJson(String prompt) {

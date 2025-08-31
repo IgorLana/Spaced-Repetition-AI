@@ -106,9 +106,9 @@ public class ReviewService {
     }
 
     private UserEntity getUsuarioLogado() {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        return userRepository.findByUsername(username) // Assumindo que findByUsername agora é findByEmail
-                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + username));
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByEmail(email) // Assumindo que findByUsername agora é findByEmail
+                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + email));
     }
 
 

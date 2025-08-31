@@ -1,0 +1,20 @@
+
+services:
+  # Serviço da Aplicação Spring Boot
+  app:
+    build: .
+    container_name: spring_app
+    ports:
+      - "9090:9090"
+    environment:
+      # Aponta para o PostgreSQL da sua máquina (host)
+      SPRING_DATASOURCE_URL: jdbc:postgresql://host.docker.internal:5432/tarefas
+
+      # Use as credenciais REAIS do seu banco de dados local
+      SPRING_DATASOURCE_USERNAME: tarefas
+      SPRING_DATASOURCE_PASSWORD: 123321
+
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    volumes:
+      # Mantemos o volume para os arquivos de imagem e áudio
+      - ./Storage:/Storage

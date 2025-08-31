@@ -39,7 +39,7 @@ public class AudioGenerationService {
 
         UserEntity usuarioLogado = getUsuarioLogado();
 
-        if (usuarioLogado.getBalance() < 10){
+        if (usuarioLogado.getBalance() < 1){
             return List.of("Saldo insuficiente para gerar audio.");
         }
 
@@ -94,7 +94,7 @@ public class AudioGenerationService {
             savedAudioPath.add(fullAudioPath);
             System.out.println("Audio salvo: %s".formatted(fullAudioPath));
         }
-        usuarioLogado.setBalance(usuarioLogado.getBalance() - 10);
+        usuarioLogado.setBalance(usuarioLogado.getBalance() - 1);
         return savedAudioPath;
 
         }catch (Exception e){
@@ -127,9 +127,9 @@ public class AudioGenerationService {
     record Audio(String audioName, byte[] audioData, String audioMimeType){}
 
     private UserEntity getUsuarioLogado() {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        return userRepository.findByUsername(username) // Assumindo que findByUsername agora é findByEmail
-                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + username));
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByEmail(email) // Assumindo que findByUsername agora é findByEmail
+                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + email));
     }
 
 }

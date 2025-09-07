@@ -18,6 +18,19 @@ public class AudioStorage {
 
     private final String folder = "A:\\DeJavan\\spaced-repetition-ai\\Storage/";
 
+    public String saveAudioFile(String audioName, byte[] audioData) {
+        Path path = Paths.get(folder, audioName);
+        try {
+            Files.createDirectories(path.getParent());
+            Files.write(path, audioData);
+            System.out.println("Arquivo de áudio salvo em: " + path.toAbsolutePath());
+            return "/storage/" + audioName;
+        } catch (IOException e) {
+            System.err.println("Erro ao salvar o arquivo de áudio: " + e.getMessage());
+            throw new RuntimeException("Falha ao salvar o arquivo de áudio: " + audioName, e);
+        }
+    }
+
     public String StorageWav(String audioName, byte[] audioData){
         AudioFormat format = new AudioFormat(
                 22500f,       // Ex: 22500f

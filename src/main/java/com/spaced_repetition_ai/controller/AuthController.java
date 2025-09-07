@@ -33,7 +33,7 @@ public class AuthController {
                 .email(request.email())
                 .password(passwordEncoder.encode(request.password()))
                 .role(Role.USER)
-                .balance(300)
+                .balance(60)
                 .build();
         userRepository.save(user);
         var jwtToken = jwtService.generateToken(user);

@@ -19,6 +19,7 @@ public class ImageStorage {
 
             Files.createDirectories(path.getParent());
             Files.write(path, imageData);
+            System.out.println("Arquivo de imagem salvo em: " + path.toAbsolutePath());
 
             return "/storage/" + imageName;
         } catch (IOException e) {

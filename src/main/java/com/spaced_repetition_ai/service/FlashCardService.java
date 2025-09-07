@@ -7,27 +7,34 @@ import com.spaced_repetition_ai.entity.FlashCardEntity;
 import com.spaced_repetition_ai.entity.StandardFlashCardEntity;
 import com.spaced_repetition_ai.entity.UserEntity;
 import com.spaced_repetition_ai.exception.DatabaseException;
-import com.spaced_repetition_ai.exception.ExternalServiceException;
 import com.spaced_repetition_ai.exception.NotFoundException;
 import com.spaced_repetition_ai.model.DeckType;
 import com.spaced_repetition_ai.model.FlashCard;
 import com.spaced_repetition_ai.model.ReviewRating;
+import com.spaced_repetition_ai.model.TextPromptStyle;
 import com.spaced_repetition_ai.repository.DeckRepository;
 import com.spaced_repetition_ai.repository.FlashCardRepository;
 import com.spaced_repetition_ai.repository.StandardFlashCardRepository;
 import com.spaced_repetition_ai.repository.UserRepository;
-import com.spaced_repetition_ai.util.DefaultPrompts;
+import com.spaced_repetition_ai.storage.AudioStorage;
+import com.spaced_repetition_ai.storage.ImageStorage;
 import org.slf4j.Logger;
 
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.Base64;
 import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 public class FlashCardService {
@@ -40,10 +47,16 @@ public class FlashCardService {
     private static final Logger log = LoggerFactory.getLogger(FlashCardService.class);
     private final UserRepository userRepository;
     private final StandardFlashCardRepository standardFlashCardRepository;
+    private final ImageStorage imageStorage;
+    private final AudioStorage audioStorage;
+
+    private final Path storageBasePath = Paths.get("A:", "DeJavan", "spaced-repetition-ai", "Storage");
 
     public FlashCardService(TextGenerationService textGenerationService, ImageGenerationService imageGenerationService,
                             AudioGenerationService audioGenerationService, FlashCardRepository flashCardRepository,
-                            DeckRepository deckRepository, UserRepository userRepository, StandardFlashCardRepository standardFlashCardRepository) {
+                            DeckRepository deckRepository, UserRepository userRepository,
+                            StandardFlashCardRepository standardFlashCardRepository,
+                            ImageStorage imageStorage, AudioStorage audioStorage) {
         this.textGenerationService = textGenerationService;
         this.imageGenerationService = imageGenerationService;
         this.audioGenerationService = audioGenerationService;
@@ -51,23 +64,8 @@ public class FlashCardService {
         this.deckRepository = deckRepository;
         this.userRepository = userRepository;
         this.standardFlashCardRepository = standardFlashCardRepository;
-    }
-
-    public List<FlashcardResponseDTO> listFlashCardsByDeck(Long deckId) {
-
-        UserEntity usuarioLogado = getUsuarioLogado();
-
-        try {
-            List<FlashCardEntity> flashCards = flashCardRepository.findByDeckIdAndDeckUserId(deckId, usuarioLogado.getId());
-
-            return flashCards.stream()
-                    .map(FlashcardResponseDTO::flashFromEntity)
-                    .collect(Collectors.toList());
-        }catch (Exception e){
-            log.error("Erro ao listar os flashcards", e);
-            throw new DatabaseException("Erro ao listar os flashcards", e);
-
-        }
+        this.imageStorage = imageStorage;
+        this.audioStorage = audioStorage;
     }
 
     public void deleteFlashCard(Long flashCardId) {
@@ -92,12 +90,10 @@ public class FlashCardService {
         || dto.getBack() == null || dto.getBack().trim().isEmpty()) {
             FlashCardEntity ent = flashCardRepository.findByIdAndDeckUserId(id, usuarioLogado.getId())
                     .orElseThrow(() -> new NotFoundException("FlashCard não encontrado com id: " + id));
-
             ent.setFront(dto.getFront());
             ent.setBack(dto.getBack());
             ent.setImagePath(dto.getImagePath());
             ent.setAudioPath(dto.getAudioPath());
-
             try {
                 flashCardRepository.save(ent);
                 log.info("FlashCard atualizado com sucesso!");
@@ -114,7 +110,6 @@ public class FlashCardService {
         if (dto.getFront() == null || dto.getFront().trim().isEmpty()) {
             throw new IllegalArgumentException("A frente do flashcard não pose ser vazia.");
         }
-
         LocalDateTime createdDate = LocalDateTime.now();
         LocalDateTime lastReview = LocalDateTime.now();
         LocalDateTime nextReview = createdDate.plusMinutes(1);
@@ -123,168 +118,189 @@ public class FlashCardService {
         DeckEntity deckEntity = deckRepository.findByUserIdAndId(usuarioLogado.getId(), deckId)
                 .orElseThrow(() -> new RuntimeException("Deck não encontrado ou não pertence ao usuário."));
 
+        String finalImagePath = dto.getImagePath();
+
+        if (dto.getImageBase64() != null && !dto.getImageBase64().isBlank()) {
+            try {
+                String base64Data = dto.getImageBase64().split(",")[1];
+                byte[] imageBytes = Base64.getDecoder().decode(base64Data);
+                String imageName = UUID.randomUUID() + ".png";
+                finalImagePath = imageStorage.saveImage(imageName, imageBytes);
+                log.info("Imagem do flashcard salva permanentemente em: {}", finalImagePath);
+            } catch (Exception e) {
+                log.error("Falha ao decodificar ou salvar a imagem Base64 para o flashcard.", e);
+                throw new RuntimeException("Erro ao processar a imagem enviada.", e);
+            }
+        }
+
+        String finalAudioPath = dto.getAudioPath();
+        if (dto.getAudioBase64() != null && !dto.getAudioBase64().isBlank()) {
+            try {
+                String base64AudioData = dto.getAudioBase64().split(",")[1];
+                byte[] audioBytes = Base64.getDecoder().decode(base64AudioData);
+                String audioName = UUID.randomUUID() + ".wav";
+                finalAudioPath = audioStorage.saveAudioFile(audioName, audioBytes);
+                log.info("Áudio do flashcard salvo em: {}", finalAudioPath);
+
+            } catch (Exception e) {
+                log.error("Falha ao decodificar ou salvar o áudio Base64.", e);
+                throw new RuntimeException("Erro ao processar o áudio enviado.", e);
+            }
+        }
+
         double easeFactor = deckEntity.getEaseFactor();
-
         int interval = 1;
-
         FlashCardEntity flashCardEntity = new FlashCardEntity(
-                null, dto.getFront(), dto.getBack(), dto.getImagePath(),
-                dto.getAudioPath(), createdDate,lastReview, nextReview,
+                null, dto.getFront(), dto.getBack(), finalImagePath,
+                finalAudioPath, createdDate,lastReview, nextReview,
                 interval, ReviewRating.BOM, easeFactor, deckEntity
         );
-
         try {
             flashCardRepository.save(flashCardEntity);
         }catch (Exception e){
             throw new DatabaseException("Erro ao salvar o flashcard", e);
         }
         log.info("FlashCard salvo com sucesso!");
-
     }
 
-    public FlashcardResponseDTO generateAiFlashCard(String prompt, Long deckId) {
+    private record MediaData(String base64, String path) {}
+
+    @Async
+    public CompletableFuture<FlashcardResponseDTO> generateAiFlashCard(String prompt, Long deckId) throws IOException {
 
         UserEntity usuarioLogado = getUsuarioLogado();
         DeckEntity deckEntity = deckRepository.findByUserIdAndId(usuarioLogado.getId(), deckId)
                 .orElseThrow(() -> new RuntimeException("Deck não encontrado ou não pertence ao usuário."));
 
         if(prompt == null || prompt.trim().isEmpty()){
-            throw new IllegalArgumentException("O prompt do flashcard não pose ser vazia.");
+            throw new IllegalArgumentException("O prompt do flashcard não pode ser vazio.");
         }
 
-        String front;
-        String back;
-        LocalDateTime createdDate = LocalDateTime.now();
-        LocalDateTime lastReview = LocalDateTime.now();
-        LocalDateTime nextReview = createdDate.plusMinutes(1);
-        int interval = 1;
-        double easeFactor = deckEntity.getEaseFactor();
-
-        // Verifica se o deck é standard
-        boolean standardDeck = DefaultPrompts.DEFAULT_TEXT_PROMPT_LANGUAGE.equals(deckEntity.getTextPrompt()) &&
-                DefaultPrompts.DEFAULT_IMAGE_PROMPT.equals(deckEntity.getImagePrompt()) &&
-                deckEntity.getAudioPrompt().isEmpty();
-
-        // Verifica se já existe um flashcard standard
-        Optional<StandardFlashCardEntity> flashcardOptional = standardFlashCardRepository.findByPrompt(prompt);
-
-        if (standardDeck && flashcardOptional.isPresent() ) {
-            FlashCardEntity flashCardEntity = new FlashCardEntity(null, flashcardOptional.get().getFront(), flashcardOptional.get().getBack(),
-                    flashcardOptional.get().getImagePath(), flashcardOptional.get().getAudioPath(),createdDate,
-                    lastReview, nextReview, interval, ReviewRating.BOM, easeFactor, deckEntity);
-
-            return new FlashcardResponseDTO(
-                    null, flashcardOptional.get().getFront(), flashcardOptional.get().getBack(),
-                    flashcardOptional.get().getImagePath(), flashcardOptional.get().getAudioPath(), createdDate, lastReview,
-                    nextReview, interval, ReviewRating.BOM,
-                    easeFactor, deckId
-            );
+        final String standardizedPrompt = prompt.toLowerCase().trim();
+        Optional<StandardFlashCardEntity> cachedCard = standardFlashCardRepository.findByPrompt(standardizedPrompt);
+        if (cachedCard.isPresent()) {
+            log.info("Cache hit para o prompt: {}. Retornando flashcard padrão.", standardizedPrompt);
+            return createResponseFromStandardCard(cachedCard.get());
         }
 
-        try {
-            if (deckEntity.getDeckType() == DeckType.LANGUAGE) {
+        final CompletableFuture<MediaData> imageFuture = (deckEntity.getGenerateImage() && usuarioLogado.getBalance() >= 5)
+                ? imageGenerationService.generateImageAsync(prompt, null, deckEntity.getImageStyle(), usuarioLogado.getId())
+                .thenApply(imageData -> {
+                    if (imageData == null || imageData.imageBytes() == null) return new MediaData(null, null);
+                    String path = imageStorage.saveImage(UUID.randomUUID() + ".png", imageData.imageBytes());
+                    String base64 = Base64.getEncoder().encodeToString(imageData.imageBytes());
+                    return new MediaData(base64, path);
+                })
+                : CompletableFuture.completedFuture(new MediaData(null, null));
 
-                FlashCard card = textGenerationService.generateTextFromJson(
-                        deckEntity.getStandardTextPrompt() + deckEntity.getTextPrompt() + "Comece agora com a palavra: " + prompt
-                                + "A lingua nativa é: " + deckEntity.getSourceLanguage().getLocaleCode() + ". E a lingua alvo para aprender é: " + deckEntity.getTargetLanguage().getLocaleCode());
-                front = card.getFront();
-                back = card.getBack();
-            } else {
-                FlashCard card = textGenerationService.generateTextFromJson(
-                        deckEntity.getStandardTextPrompt() + deckEntity.getTextPrompt() + "Comece agora com a palavra: " + prompt);
-                front = card.getFront();
-                back = card.getBack();
-            }
-
-        } catch (Exception e) {
-            throw new ExternalServiceException("Erro ao gerar o texto do flashcard via AI", e);
-        }
-        String audioPath = null;
-        String imagePath = null;
-
-        //Verificação de saldo
-        if(usuarioLogado.getBalance() < 6 && deckEntity.getGenerateImage() & deckEntity.getGenerateAudio()){
-                FlashCardEntity flashCardEntity = new FlashCardEntity(null, front, back, imagePath, audioPath,createdDate, lastReview, nextReview, interval, ReviewRating.BOM, easeFactor, deckEntity);
-                try {
-                    flashCardRepository.save(flashCardEntity);
-                } catch (Exception e) {
-                    throw new DatabaseException("Erro ao salvar o flashcard via AI", e);
-                }
-
-                log.info("FlashCard gerado com sucesso! Não foi possivel gerar imagem nem audio, devido ao saldo insuficiente.");
-
-                if (standardDeck) {
-                    saveStandardFlashCards(prompt, front, back, imagePath, audioPath);
-                }
-
-                return new FlashcardResponseDTO(
-                        null, front, back,
-                        imagePath, audioPath, createdDate, lastReview,
-                        nextReview, interval, ReviewRating.BOM,
-                        easeFactor, deckId);
-        }
-
-        if (deckEntity.getGenerateImage()) {
-            if(usuarioLogado.getBalance() >= 5) {
-                try {
-                    List<String> imagePaths = imageGenerationService.generateImage(deckEntity.getImagePrompt() + prompt, null);
-                    if (imagePaths != null && !imagePaths.isEmpty()) {
-                        imagePath = imagePaths.get(0);
-                    }else{
-                        log.info("Erro ao gerar audio.");
-                    }
-                } catch (Exception e) {
-                    throw new ExternalServiceException("Erro ao gerar a imagem do flashcard via IA", e);
-                }
-            }else {
-                log.info("Saldo insuficiente para gerar Imagem.");
-            }
-        }
-
-        if (deckEntity.getGenerateAudio()) {
-            if(usuarioLogado.getBalance() >= 1) {
-                try {
-
-                    List<String> audioPaths = audioGenerationService.generateAudio(deckEntity.getAudioPrompt() + front, null);
-                    if (audioPaths != null && !audioPaths.isEmpty()) {
-                        audioPath = audioPaths.get(0);
-                    }else{
-                        log.info("Erro ao gerar audio.");
-                    }
-                } catch (Exception e) {
-                    throw new ExternalServiceException("Erro ao gerar o audio do flashcard via IA", e);
-                }
-            }else {
-                log.info("Saldo insuficiente para gerar audio.");
-            }
-        }
-
-        FlashCardEntity flashCardEntity = new FlashCardEntity(null, front, back, imagePath, audioPath,createdDate, lastReview, nextReview, interval, ReviewRating.BOM, easeFactor, deckEntity);
-        try {
-            flashCardRepository.save(flashCardEntity);
-        } catch (Exception e) {
-            throw new DatabaseException("Erro ao salvar o flashcard via IA", e);
-        }
-
-        log.info("FlashCard gerado com sucesso!");
-
-        if (standardDeck) {
-            saveStandardFlashCards(prompt, front, back, imagePath, audioPath);
-        }
-
-        return new FlashcardResponseDTO(
-                null, front, back,
-                imagePath, audioPath, createdDate, lastReview,
-                nextReview, interval, ReviewRating.BOM,
-                easeFactor, deckId
+        CompletableFuture<FlashCard> textFuture = textGenerationService.generateTextFromJsonAsync(
+                deckEntity.getDeckType() == DeckType.LANGUAGE ?
+                        (TextPromptStyle.Language.getTemplate() + "Comece agora com a palavra: " + prompt + ". A lingua nativa é: " + deckEntity.getSourceLanguage().getLocaleCode() + " . E a lingua alvo para aprender é: " + deckEntity.getTargetLanguage().getLocaleCode()) :
+                        (TextPromptStyle.GeneralFlashcards.getTemplate() + "Comece agora com a palavra: " + prompt)
         );
+
+        CompletableFuture<MediaData> audioFuture = textFuture.thenCompose(card -> {
+            if (deckEntity.getGenerateAudio() && usuarioLogado.getBalance() >= 1 && card != null) {
+                return audioGenerationService.generateAudioAsync(card.getFront(), null, usuarioLogado.getId())
+                        .thenApply(audioData -> { // Recebe os bytes do áudio
+                            if (audioData == null || audioData.audioBytes() == null) return new MediaData(null, null);
+
+                            // SUA LÓGICA: Salva primeiro, depois converte para base64
+                            String path = audioStorage.saveAudioFile(UUID.randomUUID() + ".wav", audioData.audioBytes());
+                            String base64 = Base64.getEncoder().encodeToString(audioData.audioBytes());
+                            return new MediaData(base64, path);
+                        });
+            }
+            return CompletableFuture.completedFuture(new MediaData(null, null));
+        });
+
+        return CompletableFuture.allOf(imageFuture, textFuture, audioFuture)
+                .thenApply(v -> {
+                    MediaData imageData = imageFuture.join();
+                    FlashCard card = textFuture.join();
+                    MediaData audioData = audioFuture.join();
+
+                    if (card == null) {
+                        throw new RuntimeException("Falha ao gerar o texto do flashcard.");
+                    }
+
+                    CompletableFuture.runAsync(() ->
+                            saveStandardFlashCards(prompt, card.getFront(), card.getBack(), imageData.path(), audioData.path())
+                    ).exceptionally(ex -> {
+                        log.error("Erro ao salvar flashcard padrão em background", ex);
+                        return null;
+                    });
+
+                    log.info("FlashCard gerado, enviando resposta para o usuário.");
+                    return new FlashcardResponseDTO(
+                            card.getFront(),
+                            card.getBack(),
+                            imageData.base64(),
+                            audioData.base64()
+                    );
+                });
+
     }
 
     public void saveStandardFlashCards(String prompt, String front, String back, String imagePath, String audioPath) {
-        if(prompt != null && !prompt.trim().isEmpty() && imagePath != null  && audioPath != null){
-            StandardFlashCardEntity standardFlashCardEntity = new StandardFlashCardEntity(null, front, back, imagePath, audioPath, prompt);
-            standardFlashCardRepository.save(standardFlashCardEntity);
+        if (prompt != null && !prompt.trim().isEmpty() && front != null && back != null) {
+
+            String standardizedPrompt = prompt.toLowerCase().trim();
+
+            if (standardFlashCardRepository.findByPrompt(standardizedPrompt).isEmpty()) {
+                StandardFlashCardEntity standardFlashCardEntity = new StandardFlashCardEntity(null, front, back, imagePath, audioPath, standardizedPrompt);
+                standardFlashCardRepository.save(standardFlashCardEntity);
+                log.info("Flashcard padrão para o prompt '{}' salvo com sucesso no cache.", standardizedPrompt);
+            } else {
+                log.warn("Tentativa de salvar prompt duplicado no cache: '{}'. Operação ignorada.", standardizedPrompt);
+            }
+        } else {
+            log.warn("Não foi possível salvar o flashcard padrão devido a dados nulos. Prompt: {}", prompt);
         }
+    }
+
+    @Async
+    public CompletableFuture<FlashcardResponseDTO> createResponseFromStandardCard(StandardFlashCardEntity card) {
+        CompletableFuture<String> imageBase64Future = CompletableFuture.supplyAsync(() -> {
+            try {
+                if (card.getImagePath() == null || card.getImagePath().isBlank()) return null;
+                Path imagePath = storageBasePath.resolve(card.getImagePath().substring("/storage/".length()));
+                if (Files.exists(imagePath)) {
+                    byte[] imageBytes = Files.readAllBytes(imagePath);
+                    return Base64.getEncoder().encodeToString(imageBytes);
+                }
+                log.warn("Arquivo de imagem do cache não encontrado: {}", imagePath);
+                return null;
+            } catch (IOException e) {
+                log.error("Erro ao ler arquivo de imagem do cache.", e);
+                return null;
+            }
+        });
+
+        CompletableFuture<String> audioBase64Future = CompletableFuture.supplyAsync(() -> {
+            try {
+                if (card.getAudioPath() == null || card.getAudioPath().isBlank()) return null;
+                Path audioPath = storageBasePath.resolve(card.getAudioPath().substring("/storage/".length()));
+                if (Files.exists(audioPath)) {
+                    byte[] audioBytes = Files.readAllBytes(audioPath);
+                    return Base64.getEncoder().encodeToString(audioBytes);
+                }
+                log.warn("Arquivo de áudio do cache não encontrado: {}", audioPath);
+                return null;
+            } catch (IOException e) {
+                log.error("Erro ao ler arquivo de áudio do cache.", e);
+                return null;
+            }
+        });
+
+        return imageBase64Future.thenCombine(audioBase64Future, (imageBase64, audioBase64) ->
+                new FlashcardResponseDTO(
+                        card.getFront(),
+                        card.getBack(),
+                        imageBase64,
+                        audioBase64
+                )
+        );
     }
 
 

@@ -7,10 +7,10 @@ import com.spaced_repetition_ai.entity.DeckEntity;
 
 import com.spaced_repetition_ai.entity.UserEntity;
 import com.spaced_repetition_ai.model.DeckType;
+import com.spaced_repetition_ai.model.ImageStyle;
 import com.spaced_repetition_ai.model.Language;
 import com.spaced_repetition_ai.repository.DeckRepository;
 import com.spaced_repetition_ai.repository.UserRepository;
-import com.spaced_repetition_ai.util.DefaultPrompts;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -51,9 +51,6 @@ public class DeckService {
                     ent.setName(dto.getName());
                     ent.setTargetLanguage(dto.getTargetLanguage());
                     ent.setSourceLanguage(dto.getSourceLanguage());
-                    ent.setAudioPrompt(dto.getAudioPrompt());
-                    ent.setImagePrompt(dto.getImagePrompt());
-                    ent.setTextPrompt(dto.getTextPrompt());
                     ent.setAudioPath(dto.getAudioPath());
                     ent.setImagePath(dto.getImagePath());
                     ent.setEaseFactor(dto.getEaseFactor());
@@ -96,10 +93,7 @@ public class DeckService {
         deckEntity.setEaseFactor(Optional.ofNullable(dto.getEaseFactor()).orElse(2.0));
         deckEntity.setAudioPath((dto.getAudioPath() == null || dto.getAudioPath().trim().isEmpty()) ? "Storage/" : dto.getAudioPath() + "/" );
         deckEntity.setImagePath((dto.getImagePath() == null || dto.getImagePath().trim().isEmpty()) ? "Storage/" : dto.getImagePath() + "/");
-        deckEntity.setTextPrompt((dto.getTextPrompt() == null || dto.getTextPrompt().trim().isEmpty()) ? DefaultPrompts.DEFAULT_TEXT_PROMPT_LANGUAGE : dto.getTextPrompt());
-        deckEntity.setStandardTextPrompt((dto.getStandardTextPrompt() == null || dto.getStandardTextPrompt().trim().isEmpty()) ? DefaultPrompts.DEFAULT_TEXT_PROMPT : dto.getStandardTextPrompt());
-        deckEntity.setImagePrompt((dto.getImagePrompt() == null || dto.getImagePrompt().trim().isEmpty()) ? DefaultPrompts.DEFAULT_IMAGE_PROMPT : dto.getImagePrompt());
-        deckEntity.setAudioPrompt(Optional.ofNullable(dto.getAudioPrompt()).orElse(""));
+        deckEntity.setImageStyle(Optional.ofNullable(dto.getImageStyle()).orElse(ImageStyle.ANIME_STYLE));
 
 
         deckEntity.setGenerateAudio(Optional.ofNullable(dto.getGenerateAudio()).orElse(true));

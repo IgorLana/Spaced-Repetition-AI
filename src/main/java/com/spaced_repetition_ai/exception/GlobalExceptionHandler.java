@@ -19,5 +19,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(new ErrorResponseDTO("NOT_FOUND", e.getMessage()));
     }
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponseDTO> handleGenericException(Exception e) {
+        // Logamos o erro completo no servidor para podermos investigar
+        log.error("Ocorreu um erro inesperado na aplicação", e);
+
+        // Retornamos uma mensagem de erro genérica e segura para o cliente
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponseDTO("INTERNAL_SERVER_ERROR", "Ocorreu um erro interno. Por favor, tente novamente mais tarde."));
+    }
 
 }

@@ -2,17 +2,16 @@ package com.spaced_repetition_ai.service;
 
 import com.spaced_repetition_ai.dto.DeckRequestDTO;
 import com.spaced_repetition_ai.dto.DeckResponseDTO;
-import com.spaced_repetition_ai.dto.FlashcardRequestDTO;
+
 import com.spaced_repetition_ai.entity.DeckEntity;
-import com.spaced_repetition_ai.entity.FlashCardEntity;
+
 import com.spaced_repetition_ai.entity.UserEntity;
 import com.spaced_repetition_ai.model.DeckType;
 import com.spaced_repetition_ai.model.Language;
 import com.spaced_repetition_ai.repository.DeckRepository;
-import com.spaced_repetition_ai.repository.FlashCardRepository;
-import com.spaced_repetition_ai.repository.StandardFlashCardRepository;
+
 import com.spaced_repetition_ai.repository.UserRepository;
-import jakarta.validation.constraints.NotBlank;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -67,16 +66,12 @@ class DeckServiceTest {
         newDeckRequest = new DeckRequestDTO();
         newDeckRequest.setName("test deck");
         newDeckRequest.setDescription("test deck description");
-        newDeckRequest.setAudioPrompt("test audio prompt");
-        newDeckRequest.setImagePrompt("test image prompt");
-        newDeckRequest.setTextPrompt("test text prompt");
         newDeckRequest.setAudioPath("/caminho/audio.wav");
         newDeckRequest.setImagePath("/caminho/imagem.png");
         newDeckRequest.setEaseFactor(2.5);
         newDeckRequest.setGenerateImage(true);
         newDeckRequest.setGenerateAudio(true);
         newDeckRequest.setDeckType(DeckType.LANGUAGE);
-        newDeckRequest.setStandardTextPrompt("test standard text prompt");
         newDeckRequest.setTargetLanguage(Language.PORTUGUES_BRASIL);
         newDeckRequest.setSourceLanguage(Language.INGLES_EUA);
 
@@ -113,7 +108,6 @@ class DeckServiceTest {
         assertEquals("/caminho/audio.wav/", savedDeck.getAudioPath());
         assertEquals("/caminho/imagem.png/", savedDeck.getImagePath());
         assertEquals(DeckType.LANGUAGE, savedDeck.getDeckType());
-        assertEquals("test standard text prompt", savedDeck.getStandardTextPrompt());
         assertEquals(Language.PORTUGUES_BRASIL, savedDeck.getTargetLanguage());
         assertEquals(Language.INGLES_EUA, savedDeck.getSourceLanguage());
     }

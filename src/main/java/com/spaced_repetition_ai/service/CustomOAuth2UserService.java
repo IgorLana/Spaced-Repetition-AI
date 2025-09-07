@@ -35,29 +35,21 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
         OAuth2User oauth2User = super.loadUser(userRequest);
 
-        // Identifica qual provedor está sendo usado (ex: "google", "github")
         String provider = userRequest.getClientRegistration().getRegistrationId();
 
         String email;
         String name;
         AuthProvider authProvider;
 
-        System.out.println("Testando 1 ___________" + oauth2User + "Test 2___________" + userRequest);
-        System.out.println("Testando 2 ___________" + oauth2User.getAttributes());
-        System.out.println("Testando 3 ___________" + oauth2User.getAttribute("email"));
-        System.out.println("Testando 4 ___________" + oauth2User.getAttribute("name"));
-        System.out.println("Testando 5 ___________" + userRequest.getClientRegistration().getRegistrationId());
-
         if ("github".equalsIgnoreCase(provider)) {
-            // Lógica para extrair dados do GitHub
+
             authProvider = AuthProvider.GITHUB;
-            // O e-mail do GitHub pode ser nulo se não for público
-            email = oauth2User.getAttribute("email");
+
             name = oauth2User.getAttribute("name");
             if (name == null || name.isBlank()) {
-                name = oauth2User.getAttribute("login"); // Usa o login como fallback
+                name = oauth2User.getAttribute("login");
             }
-            // ✅ LÓGICA ATUALIZADA PARA BUSCAR E-MAIL
+
             email = oauth2User.getAttribute("email");
             if (email == null || email.isBlank()) {
                 log.info("E-mail não encontrado no perfil principal do GitHub. Tentando endpoint /user/emails...");
@@ -88,7 +80,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             userEntity = registerNewUser(authProvider, name, email);
         }
 
-        // Atribui os atributos do usuário OAuth2 à nossa entidade para uso posterior
         userEntity.setAttributes(oauth2User.getAttributes());
 
         return userEntity;
@@ -100,7 +91,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 .name(name)
                 .role(Role.USER)
                 .authProvider(authProvider)
-                .balance(300)
+                .balance(60)
                 .build();
         try {
             return userRepository.save(newUser);
@@ -113,11 +104,10 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         try {
             RestTemplate restTemplate = new RestTemplate();
             HttpHeaders headers = new HttpHeaders();
-            // Adiciona o token de acesso no cabeçalho da requisição
+
             headers.setBearerAuth(accessToken.getTokenValue());
             HttpEntity<String> entity = new HttpEntity<>("", headers);
 
-            // Faz a chamada para o endpoint /user/emails
             ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
                     "https://api.github.com/user/emails",
                     HttpMethod.GET,
@@ -125,7 +115,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                     new ParameterizedTypeReference<List<Map<String, Object>>>() {}
             );
 
-            // Procura na resposta o e-mail que é primário e verificado
+
             if (response.getBody() != null) {
                 return response.getBody().stream()
                         .filter(emailMap -> (Boolean) emailMap.getOrDefault("primary", false) && (Boolean) emailMap.getOrDefault("verified", false))

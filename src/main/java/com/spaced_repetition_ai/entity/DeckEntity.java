@@ -2,6 +2,7 @@ package com.spaced_repetition_ai.entity;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.spaced_repetition_ai.model.DeckType;
+import com.spaced_repetition_ai.model.ImageStyle;
 import com.spaced_repetition_ai.model.Language;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -27,30 +28,23 @@ public class DeckEntity {
     private String description;
     private Language targetLanguage;
     private Language sourceLanguage;
-    @Column(columnDefinition = "TEXT")
-    private String audioPrompt;
-    @Column(columnDefinition = "TEXT")
-    private String imagePrompt;
-    @Column(columnDefinition = "TEXT")
     private String textPrompt;
     private String audioPath;
     private String imagePath;
     private double easeFactor;
-    @Column(columnDefinition = "TEXT")
-    private String standardTextPrompt;
     private boolean generateImage;
     private boolean generateAudio;
     private DeckType deckType;
 
+    private ImageStyle imageStyle;
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false) // Diz qual coluna na tabela 'decks' é a chave estrangeira para a tabela 'users'
+    @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
 
     @OneToMany(mappedBy = "deck", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<FlashCardEntity> flashCards = new ArrayList<>();
-
-
 
     public boolean getGenerateImage() {
         return generateImage;

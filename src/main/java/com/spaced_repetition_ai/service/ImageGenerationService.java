@@ -1,127 +1,125 @@
 package com.spaced_repetition_ai.service;
 
-import com.google.common.collect.ImmutableList;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
 import com.google.genai.Client;
-import com.google.genai.types.Content;
-import com.google.genai.types.GenerateContentConfig;
-import com.google.genai.types.GenerateContentResponse;
-import com.google.genai.types.Part;
+import com.google.genai.types.*;
 import com.spaced_repetition_ai.entity.UserEntity;
-import com.spaced_repetition_ai.exception.DatabaseException;
+
+import com.spaced_repetition_ai.exception.ExternalServiceException;
+import com.spaced_repetition_ai.model.ImageStyle;
+
 import com.spaced_repetition_ai.repository.UserRepository;
-import com.spaced_repetition_ai.storage.ImageStorage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.Nullable;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
+import org.springframework.scheduling.annotation.Async;
+
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-import org.springframework.util.MimeType;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
+@Slf4j
 @Service
 public class ImageGenerationService {
 
 
-    private final String imageGenerationModel = "gemini-2.0-flash-preview-image-generation";
-
     private final Client genaiClient;
-    private final ImageStorage imageStorage;
     private final UserRepository userRepository;
-    private static final Logger log = LoggerFactory.getLogger(FlashCardService.class);
 
-    public ImageGenerationService(Client genaiClient, ImageStorage imageStorage, UserRepository userRepository) {
+    public record GeneratedImageData(byte[] imageBytes, String mimeType) {}
+
+    public ImageGenerationService(Client genaiClient, UserRepository userRepository) {
         this.genaiClient = genaiClient;
-        this.imageStorage = imageStorage;
         this.userRepository = userRepository;
     }
 
+    @Retryable(
+            retryFor = ExternalServiceException.class,
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 2000, multiplier = 2)
+    )
+    public GeneratedImageData generateImage(String prompt, @Nullable List<MultipartFile> images, ImageStyle style, Long userId) {
+        try {
+            UserEntity usuarioLogado = userRepository.findById(userId)
+                    .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + userId));
+            if (usuarioLogado.getBalance() < 5) {
+                log.info("Saldo insuficiente para gerar imagem.");
+            }
+            if (prompt.isBlank()) {
+                log.info("Nao é possivel gerar imagem com prompt vazio.");
+            }
+            String promptFinal = prompt;
+            try {
+                String template = style.getTemplate();
+                promptFinal = template
+                        .replace("${language}", "ingles")
+                        .replace("${word}", prompt);
 
+                GenerateContentResponse response =
+                        genaiClient.models.generateContent(
+                                "gemini-2.5-flash",
+                                promptFinal,
+                                null);
 
-    public List<String> generateImage(String prompt, @Nullable List<MultipartFile> images){
+                System.out.println(response.text());
+                String generatedJsonString = response.text();
+                System.out.println("JSON recebido do Gemini (bruto): " + generatedJsonString);
+                assert generatedJsonString != null;
+                if (generatedJsonString.startsWith("```json")) {
+                    generatedJsonString = generatedJsonString.substring("```json" .length()).trim();
+                }
+                if (generatedJsonString.endsWith("```")) {
+                    generatedJsonString = generatedJsonString.substring(0, generatedJsonString.length() - "```" .length()).trim();
+                }
+                System.out.println("JSON após remoção dos delimitadores: " + generatedJsonString);
 
-        UserEntity usuarioLogado = getUsuarioLogado();
+                promptFinal = generatedJsonString;
+                ObjectMapper objectMapper = new ObjectMapper();
+                objectMapper.registerModule(new JavaTimeModule());
 
-        if (usuarioLogado.getBalance() < 5){
-            return List.of("Saldo insuficiente para gerar imagem.");
-        }
+            } catch (Exception e) {
+                log.error("Erro ao tentar obter o template do deck.", e);
+                System.out.print("Ocorreu um erro ao tentar obter o template do deck. Tente novamente.");
+            }
+            System.out.println("Prompt final:____________________________________________________" + promptFinal);
 
-        if (prompt.isBlank()){
-            return List.of("Nao é possivel gerar imagem com prompt vazio.");
-        }
+            GenerateImagesConfig config = GenerateImagesConfig
+                    .builder()
+                    .numberOfImages(1)
+                    .aspectRatio("1:1")
+                    .outputMimeType("image/png")
+                    .build();
+            GenerateImagesResponse response = this.genaiClient.models.generateImages("imagen-4.0-fast-generate-001", promptFinal, config);
+            byte[] imageBytesList = response.generatedImages().get().get(0).image().get().imageBytes().get();
 
+            usuarioLogado.setBalance(usuarioLogado.getBalance() - 5);
+            userRepository.save(usuarioLogado);
+            log.info("Imagem gerada com sucesso!");
 
-        List<Part> parts = new ArrayList<>();
-        parts.add(Part.fromText(prompt));
-
-        if (images != null) {
-            List<Part> imagePart = images.stream()
-                    .map( image -> {
-                        try {
-                            return Part.fromBytes(image.getBytes(), image.getContentType());
-                        } catch (IOException e) {
-                            return null;
-                        }
-                    })
-                    .filter(Objects::nonNull)
-                    .toList();
-            parts.addAll(imagePart);
-        }
-
-        Content content = Content.builder().parts(parts).build();
-        GenerateContentConfig config = GenerateContentConfig.builder()
-                .responseModalities(List.of("Text", "Image"))
-                .build();
-
-        try{
-            GenerateContentResponse response = this.genaiClient.models.generateContent(imageGenerationModel, content, config);
-            List<Image> generateImage = getImages(response);
-
-        List<String> savedImagePath = new ArrayList<>();
-        for (Image image : generateImage) {
-            String fullPath = imageStorage.saveImage(image.imageName(), image.imageBytes());
-            savedImagePath.add(fullPath);
-            System.out.println("Imagem salva: %s".formatted(fullPath));
-        }
-        usuarioLogado.setBalance(usuarioLogado.getBalance() - 5);
-        return savedImagePath;
-
-        }catch (Exception e){
-            log.error("API do Google fora do ar!", e);
-            return List.of("Ocorreu um erro ao gerar a imagem. Tente novamente.");
+            return new GeneratedImageData(imageBytesList, "image/png");
+        }catch (IllegalStateException e) {
+            throw e;
+        } catch (Exception e) {
+            log.warn("Falha na chamada da API do Google, tentando novamente... Erro: {}", e.getMessage());
+            throw new ExternalServiceException("Falha na comunicação com a API do Google", e);
         }
     }
 
-    private List<Image> getImages(GenerateContentResponse response) {
-        ImmutableList<Part> responseParts = response.parts();
-        if (responseParts == null || responseParts.isEmpty()) {
-            return Collections.emptyList();
+    @Async
+    public CompletableFuture<GeneratedImageData> generateImageAsync(String prompt, @Nullable List<MultipartFile> images, ImageStyle style, Long userId) {
+        try {
+            GeneratedImageData result = generateImage(prompt, images, style, userId);
+            return CompletableFuture.completedFuture(result);
+        } catch (Exception e) {
+            log.error("Falha na geração assíncrona de imagem", e);
+            return CompletableFuture.failedFuture(e);
         }
-        return responseParts
-                .stream()
-                .map(Part::inlineData)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .filter(inlineData -> inlineData.data().isPresent())
-                .map(inlineData -> {
-                    MimeType mimeType = MimeType.valueOf(inlineData.mimeType().get()); // imageMimeType
-                    return new Image(
-                            "%s.%s".formatted(UUID.randomUUID().toString(), mimeType.getSubtype()),
-                            inlineData.data().get(), // imageBytes
-                            mimeType.toString());
-                })
-                .toList();
-    }
-
-    record Image(String imageName, byte[] imageBytes, String mimeType) {}
-
-    private UserEntity getUsuarioLogado() {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        return userRepository.findByEmail(email) // Assumindo que findByUsername agora é findByEmail
-                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + email));
     }
 
 }

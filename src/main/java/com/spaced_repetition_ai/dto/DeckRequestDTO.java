@@ -2,6 +2,7 @@ package com.spaced_repetition_ai.dto;
 
 
 import com.spaced_repetition_ai.model.DeckType;
+import com.spaced_repetition_ai.model.ImageStyle;
 import com.spaced_repetition_ai.model.Language;
 
 import jakarta.validation.constraints.NotBlank;
@@ -20,15 +21,12 @@ public class DeckRequestDTO {
     private String description;
     private Language targetLanguage;
     private Language sourceLanguage;
-    private String audioPrompt;
-    private String imagePrompt;
-    private String textPrompt;
     private String audioPath;
     private String imagePath;
     private Double easeFactor;
     private Boolean generateImage;
     private Boolean generateAudio;
     private DeckType deckType;
-    private String standardTextPrompt;
+    private ImageStyle imageStyle;
 
 }

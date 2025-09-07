@@ -10,16 +10,13 @@ public record DeckResponseDTO(
         String description,
         Language targetLanguage,
         Language sourceLanguage,
-        String audioPrompt,
-        String imagePrompt,
-        String textPrompt,
         String audioPath,
         String imagePath,
         Double easeFactor,
         Boolean generateImage,
         Boolean generateAudio,
-        DeckType deckType,
-        String standardTextPrompt
+        DeckType deckType
+
         
 ) {
     public static DeckResponseDTO fromEntity(DeckEntity deckEntity) {
@@ -30,16 +27,12 @@ public record DeckResponseDTO(
                 deckEntity.getDescription(),
                 deckEntity.getTargetLanguage(),
                 deckEntity.getSourceLanguage(),
-                deckEntity.getAudioPrompt(),
-                deckEntity.getImagePrompt(),
-                deckEntity.getTextPrompt(),
                 deckEntity.getAudioPath(),
                 deckEntity.getImagePath(),
                 deckEntity.getEaseFactor(),
                 deckEntity.getGenerateImage(),
                 deckEntity.getGenerateAudio(),
-                deckEntity.getDeckType(),
-                deckEntity.getStandardTextPrompt()
+                deckEntity.getDeckType()
                 
         );
     }

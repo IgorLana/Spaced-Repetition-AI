@@ -18,4 +18,10 @@ public class FlashcardRequestDTO{
         @Nullable
         String audioPath;
 
+        @Nullable
+        String imageBase64;
+
+        @Nullable
+        String audioBase64;
+
 }

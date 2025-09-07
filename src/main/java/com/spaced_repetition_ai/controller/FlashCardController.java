@@ -5,12 +5,17 @@ import com.spaced_repetition_ai.dto.FlashcardResponseDTO;
 import com.spaced_repetition_ai.entity.FlashCardEntity;
 import com.spaced_repetition_ai.service.FlashCardService;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+
 import org.springframework.web.bind.annotation.*;
+import java.util.concurrent.CompletableFuture;
 
-import java.util.List;
+import java.util.concurrent.ExecutionException;
 
+
+@Slf4j
 @RestController
 @RequestMapping("/api/flashcard")
 public class FlashCardController {
@@ -18,9 +23,7 @@ public class FlashCardController {
     private final FlashCardService flashCardService;
 
     public FlashCardController(FlashCardService flashCardService) {
-
         this.flashCardService = flashCardService;
-
     }
 
     @DeleteMapping("/{flashCardId}")
@@ -28,15 +31,6 @@ public class FlashCardController {
         flashCardService.deleteFlashCard(flashCardId);
     }
 
-    @GetMapping
-    public ResponseEntity<List<FlashcardResponseDTO>> listFlashCardByDeck(@RequestParam("deckId") Long deckId ){
-        List<FlashcardResponseDTO> toReview = flashCardService.listFlashCardsByDeck(deckId);
-
-        if(toReview.isEmpty()){
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.ok(toReview);
-    }
 
     @PutMapping("/{id}") // Ou @PatchMapping para atualizações parciais
     public ResponseEntity<FlashCardEntity> update(@PathVariable("id") Long id, @RequestBody FlashcardRequestDTO dto) {
@@ -53,14 +47,27 @@ public class FlashCardController {
 
     @PostMapping("/ai")
     public ResponseEntity<FlashcardResponseDTO> generateAiFlashCard(@RequestParam("prompt") String prompt, @RequestParam("deckId") Long deckId) {
+        log.info("Recebida requisição para gerar flashcard com IA.");
         try {
-            FlashcardResponseDTO generatedCard = flashCardService.generateAiFlashCard(prompt, deckId);
-            return ResponseEntity.ok(generatedCard); // Retorna 200 OK com os dados do flashcard em JSON
+            CompletableFuture<FlashcardResponseDTO> future = flashCardService.generateAiFlashCard(prompt, deckId);
+
+            FlashcardResponseDTO result = future.get(); // ou .join()
+
+            log.info("Lógica assíncrona concluída. Enviando resposta.");
+            return ResponseEntity.ok(result);
+
+        } catch (InterruptedException | ExecutionException e) {
+            log.error("Erro ao esperar pelo resultado do CompletableFuture", e);
+            Throwable cause = e.getCause() != null ? e.getCause() : e;
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Erro inesperado na camada do controller", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
 
     }
 
-}
+
+    }
+
+

@@ -36,7 +36,7 @@ public class SecurityConfig {
                 .cors(withDefaults())
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**", "/oauth2/**").permitAll()
+                        .requestMatchers("/api/auth/**", "/oauth2/**", "/error").permitAll()
                         .requestMatchers("/storage/**").permitAll()
                         .requestMatchers("/api/v1/webhooks/**").permitAll()
                         .anyRequest().authenticated()
@@ -49,7 +49,7 @@ public class SecurityConfig {
                                 .userService(customOAuth2UserService)
                         )
                         .successHandler(oAuth2AuthenticationSucessHandler)
-                );
+                ).exceptionHandling(e -> e.authenticationEntryPoint(restAuthenticationEntryPoint));
 
         return http.build();
     }

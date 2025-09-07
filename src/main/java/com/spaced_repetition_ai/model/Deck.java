@@ -14,14 +14,11 @@ public class Deck {
     private LocalDateTime createdDate;
     private Language TargetLanguage;
     private Language SourceLanguage;
-    private String AudioPrompt;
-    private String ImagePrompt;
-    private String TextPrompt;
     private String AudioPath;
     private String ImagePath;
     private double easeFactor;
-    private String standardTextPrompt;
     private boolean generateImage;
     private boolean generateAudio;
     private DeckType deckType;
+    private ImageStyle imageStyle;
 }

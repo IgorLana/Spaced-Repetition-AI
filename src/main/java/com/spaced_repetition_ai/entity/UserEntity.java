@@ -15,15 +15,15 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.core.oidc.OidcIdToken;
 import org.springframework.security.oauth2.core.oidc.OidcUserInfo;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-@Data
 @Builder
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
@@ -41,12 +41,16 @@ public class UserEntity implements UserDetails, OidcUser {
     private String email;
     @Enumerated(EnumType.STRING)
     private Role role;
-    @Column(nullable = false, columnDefinition = "integer default 0")
+
     private int balance;
     @Enumerated(EnumType.STRING)
     @Column(name = "auth_provider", nullable = false)
     @ColumnDefault("'LOCAL'")
     private AuthProvider authProvider;
+    @Builder.Default
+    private boolean isVerified = false;
+    private String verificationToken;
+    private LocalDateTime tokenExpirationDate;
 
 
     @OneToMany(
@@ -79,7 +83,6 @@ public class UserEntity implements UserDetails, OidcUser {
     private OidcIdToken idToken;
 
 
-    // --- Métodos de OAuth2User e OidcUser ---
 
     @Transient
     private Map<String, Object> attributes;
@@ -89,7 +92,6 @@ public class UserEntity implements UserDetails, OidcUser {
         return this.name;
     }
 
-    // ✅ 6. IMPLEMENTAR OS MÉTODOS ADICIONAIS EXIGIDOS PELO OidcUser
     @Override
     public Map<String, Object> getClaims() {
         return this.claims;
@@ -104,4 +106,25 @@ public class UserEntity implements UserDetails, OidcUser {
     public OidcIdToken getIdToken() {
         return this.idToken;
     }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return this.isVerified;
+    }
+
 }

@@ -49,6 +49,7 @@ public class FlashCardService {
     private final StandardFlashCardRepository standardFlashCardRepository;
     private final ImageStorage imageStorage;
     private final AudioStorage audioStorage;
+    private final AwsService awsService;
 
     private final Path storageBasePath = Paths.get("A:", "DeJavan", "spaced-repetition-ai", "Storage");
 
@@ -56,7 +57,8 @@ public class FlashCardService {
                             AudioGenerationService audioGenerationService, FlashCardRepository flashCardRepository,
                             DeckRepository deckRepository, UserRepository userRepository,
                             StandardFlashCardRepository standardFlashCardRepository,
-                            ImageStorage imageStorage, AudioStorage audioStorage) {
+                            ImageStorage imageStorage, AudioStorage audioStorage,
+                            AwsService awsService) {
         this.textGenerationService = textGenerationService;
         this.imageGenerationService = imageGenerationService;
         this.audioGenerationService = audioGenerationService;
@@ -66,6 +68,7 @@ public class FlashCardService {
         this.standardFlashCardRepository = standardFlashCardRepository;
         this.imageStorage = imageStorage;
         this.audioStorage = audioStorage;
+        this.awsService = awsService;
     }
 
     public void deleteFlashCard(Long flashCardId) {
@@ -119,34 +122,7 @@ public class FlashCardService {
                 .orElseThrow(() -> new RuntimeException("Deck não encontrado ou não pertence ao usuário."));
 
         String finalImagePath = dto.getImagePath();
-
-        if (dto.getImageBase64() != null && !dto.getImageBase64().isBlank()) {
-            try {
-                String base64Data = dto.getImageBase64().split(",")[1];
-                byte[] imageBytes = Base64.getDecoder().decode(base64Data);
-                String imageName = UUID.randomUUID() + ".png";
-                finalImagePath = imageStorage.saveImage(imageName, imageBytes);
-                log.info("Imagem do flashcard salva permanentemente em: {}", finalImagePath);
-            } catch (Exception e) {
-                log.error("Falha ao decodificar ou salvar a imagem Base64 para o flashcard.", e);
-                throw new RuntimeException("Erro ao processar a imagem enviada.", e);
-            }
-        }
-
         String finalAudioPath = dto.getAudioPath();
-        if (dto.getAudioBase64() != null && !dto.getAudioBase64().isBlank()) {
-            try {
-                String base64AudioData = dto.getAudioBase64().split(",")[1];
-                byte[] audioBytes = Base64.getDecoder().decode(base64AudioData);
-                String audioName = UUID.randomUUID() + ".wav";
-                finalAudioPath = audioStorage.saveAudioFile(audioName, audioBytes);
-                log.info("Áudio do flashcard salvo em: {}", finalAudioPath);
-
-            } catch (Exception e) {
-                log.error("Falha ao decodificar ou salvar o áudio Base64.", e);
-                throw new RuntimeException("Erro ao processar o áudio enviado.", e);
-            }
-        }
 
         double easeFactor = deckEntity.getEaseFactor();
         int interval = 1;
@@ -205,7 +181,6 @@ public class FlashCardService {
                         .thenApply(audioData -> { // Recebe os bytes do áudio
                             if (audioData == null || audioData.audioBytes() == null) return new MediaData(null, null);
 
-                            // SUA LÓGICA: Salva primeiro, depois converte para base64
                             String path = audioStorage.saveAudioFile(UUID.randomUUID() + ".wav", audioData.audioBytes());
                             String base64 = Base64.getEncoder().encodeToString(audioData.audioBytes());
                             return new MediaData(base64, path);
@@ -304,7 +279,7 @@ public class FlashCardService {
     }
 
 
-    private UserEntity getUsuarioLogado() {
+    public UserEntity getUsuarioLogado() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByEmail(email) // Assumindo que findByUsername agora é findByEmail
                 .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + email));

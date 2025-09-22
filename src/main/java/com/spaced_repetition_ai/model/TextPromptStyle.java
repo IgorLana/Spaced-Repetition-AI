@@ -10,7 +10,7 @@ import java.io.IOException;
 @Getter
 public enum TextPromptStyle {
     MultipleFlashcards("templates/text_MultipleFlashcards_prompt.md"),
-    GeneralFlashcards("templates/text_generalFlashcards_prompt.md"),
+    GeneralFlashcards("templates/text_generalFlashcard_prompt.md"),
     Language("templates/text_languageFlashcards_Prompt.md");
 
     private final String templatePath;

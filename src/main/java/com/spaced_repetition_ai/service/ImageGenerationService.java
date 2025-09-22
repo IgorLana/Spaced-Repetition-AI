@@ -105,9 +105,6 @@ public class ImageGenerationService {
             return new GeneratedImageData(imageBytesList, "image/png");
         }catch (IllegalStateException e) {
             throw e;
-        } catch (Exception e) {
-            log.warn("Falha na chamada da API do Google, tentando novamente... Erro: {}", e.getMessage());
-            throw new ExternalServiceException("Falha na comunicação com a API do Google", e);
         }
     }
 

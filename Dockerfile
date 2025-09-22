@@ -30,7 +30,7 @@ WORKDIR /app
 # O nome do .jar é definido pelo <artifactId> e <version> no seu pom.xml.
 COPY --from=build /app/target/spaced-repetition-ai-0.0.1-SNAPSHOT.jar app.jar
 
-# Expõe a porta 8080, que é a porta padrão do Spring Boot.
+# Expõe a porta 9090, que é a porta padrão do Spring Boot.
 EXPOSE 9090
 
 # Comando para iniciar a aplicação quando o container for executado.

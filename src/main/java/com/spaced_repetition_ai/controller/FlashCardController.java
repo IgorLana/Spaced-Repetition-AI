@@ -3,6 +3,8 @@ package com.spaced_repetition_ai.controller;
 import com.spaced_repetition_ai.dto.FlashcardRequestDTO;
 import com.spaced_repetition_ai.dto.FlashcardResponseDTO;
 import com.spaced_repetition_ai.entity.FlashCardEntity;
+import com.spaced_repetition_ai.entity.UserEntity;
+import com.spaced_repetition_ai.service.AwsService;
 import com.spaced_repetition_ai.service.FlashCardService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
@@ -10,6 +12,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import java.util.concurrent.ExecutionException;
@@ -21,8 +25,10 @@ import java.util.concurrent.ExecutionException;
 public class FlashCardController {
 
     private final FlashCardService flashCardService;
+    private final AwsService awsService;
 
-    public FlashCardController(FlashCardService flashCardService) {
+    public FlashCardController(FlashCardService flashCardService, AwsService awsService) {
+        this.awsService = awsService;
         this.flashCardService = flashCardService;
     }
 
@@ -67,7 +73,14 @@ public class FlashCardController {
 
     }
 
-
+    @GetMapping("/upload-url")
+    public ResponseEntity<Map<String, String>> getUploadUrl(@RequestParam("fileName") String fileName) {
+        UserEntity usuarioLogado = flashCardService.getUsuarioLogado();
+        String presignedUrl = awsService.generatePresignedUploadUrl(usuarioLogado.getId(), fileName);
+        return ResponseEntity.ok(Map.of("url", presignedUrl));
     }
+
+
+}
 
 

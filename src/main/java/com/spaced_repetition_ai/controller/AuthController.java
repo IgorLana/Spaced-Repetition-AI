@@ -11,6 +11,7 @@ import com.spaced_repetition_ai.service.AwsService;
 import com.spaced_repetition_ai.service.EmailService;
 import com.spaced_repetition_ai.service.JwtService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -34,6 +35,8 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final AwsService awsService;
     private final EmailService emailService;
+    @Value("${cookie-domain}")
+    private String cookieDomain;
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest request){
@@ -77,7 +80,7 @@ public class AuthController {
         Map<String, String> signedCookies = awsService.getSignedCloudFrontCookies(user.getId());
 
         ResponseCookie keyPairId = ResponseCookie.from("CloudFront-Key-Pair-Id", signedCookies.get("CloudFront-Key-Pair-Id"))
-                .domain("d2v1nn8kk8g8xj.cloudfront.net") // ex: cdn.seusite.com
+                .domain(cookieDomain) // ex: cdn.seusite.com
                 .path("/")
                 .httpOnly(true)
                 .secure(true)
@@ -85,7 +88,7 @@ public class AuthController {
                 .build();
 
         ResponseCookie signature = ResponseCookie.from("CloudFront-Signature", signedCookies.get("CloudFront-Signature"))
-                .domain("d2v1nn8kk8g8xj.cloudfront.net")
+                .domain(cookieDomain)
                 .path("/")
                 .httpOnly(true)
                 .secure(true)
@@ -93,7 +96,7 @@ public class AuthController {
                 .build();
 
         ResponseCookie policy = ResponseCookie.from("CloudFront-Policy", signedCookies.get("CloudFront-Policy"))
-                .domain("d2v1nn8kk8g8xj.cloudfront.net")
+                .domain(cookieDomain)
                 .path("/")
                 .httpOnly(true)
                 .secure(true)

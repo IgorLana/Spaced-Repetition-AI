@@ -1,0 +1,87 @@
+name: Build, Push, and Deploy to AWS EC2
+
+on:
+  push:
+    branches:
+      - main # Altere para 'master' se for o nome da sua branch principal
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: sra-repository # O nome do seu repositório ECR
+          IMAGE_TAG: ${{ github.sha }} # Usa o hash do commit como tag da imagem
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            # Faz o login no ECR a partir da instância EC2 para poder baixar a imagem
+            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REPOSITORY_URI }}
+
+            # Cria o diretório para a chave privada do CloudFront
+            mkdir -p /home/ec2-user/keys
+
+            # Coloca a chave privada do CloudFront (vinda dos secrets) em um arquivo na EC2
+            echo "${{ secrets.CLOUDFRONT_PRIVATE_KEY }}" > /home/ec2-user/keys/cloudfront_private_key.pem
+
+            # Cria (ou atualiza) o arquivo docker-compose.yml na EC2
+            # Injeta a nova tag da imagem e todos os segredos como variáveis de ambiente
+            cat << EOF > /home/ec2-user/docker-compose.yml
+            version: '3.8'
+            services:
+              app:
+                image: ${{ steps.build-image.outputs.image }}
+                ports:
+                  - "9090:9090"
+                environment:
+                  - SPRING_PROFILES_ACTIVE=prod
+                  - DB_URL_PROD=${{ secrets.DB_URL_PROD }}
+                  - DB_USERNAME_PROD=${{ secrets.DB_USERNAME_PROD }}
+                  - DB_PASSWORD_PROD=${{ secrets.DB_PASSWORD_PROD }}
+                  - JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}
+                  - GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+                  - MERCADOPAGO_ACCESS_TOKEN=${{ secrets.MERCADOPAGO_ACCESS_TOKEN }}
+                  - AWS_S3_BUCKET_NAME=${{ secrets.AWS_S3_BUCKET_NAME }}
+                  - CLOUDFRONT_DOMAIN_NAME=${{ secrets.CLOUDFRONT_DOMAIN_NAME }}
+                  - CLOUDFRONT_KEY_PAIR_ID=${{ secrets.CLOUDFRONT_KEY_PAIR_ID }}
+                  - CLOUDFRONT_PRIVATE_KEY_PATH=/app/keys/cloudfront_private_key.pem
+                  - COOKIE_DOMAIN=${{ secrets.COOKIE_DOMAIN }}
+                  - APP_OAUTH2_REDIRECT_URI=${{ secrets.APP_OAUTH2_REDIRECT_URI }}
+                  - MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}
+                  - MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
+                volumes:
+                  # Mapeia a chave da EC2 para dentro do contêiner
+                  - /home/ec2-user/keys:/app/keys:ro
+                restart: always
+            EOF
+
+            # Navega para o diretório e executa o Docker Compose
+            cd /home/ec2-user
+            docker-compose pull
+            docker-compose up -d --force-recreate

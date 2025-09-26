@@ -4,6 +4,7 @@ package com.spaced_repetition_ai.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.services.cloudfront.cookie.CookiesForCustomPolicy;
 import software.amazon.awssdk.services.cloudfront.cookie.SignedCookie;
 import software.amazon.awssdk.services.cloudfront.model.CustomSignerRequest;
 
@@ -71,7 +72,8 @@ public class AwsService {
     public Map<String, String> getSignedCloudFrontCookies(Long userId) {
         try {
             // A URL do recurso para a política é o domínio e o caminho base dos arquivos.
-            String policyResourcePath = "https://" + cloudFrontDomain + "/users/" + userId + "/flashcards/*";
+            // Teste com um path mais amplo primeiro
+            String policyResourcePath = "https://" + cloudFrontDomain + "/*";
 
             // Carregue a chave privada a partir do arquivo
             PrivateKey privateKey = loadPrivateKeyFromFile(privateKeyPath);
@@ -85,12 +87,23 @@ public class AwsService {
                     .expirationDate(Instant.now().plus(12, ChronoUnit.HOURS))
                     .build();
 
-            SignedCookie signedCookie = cloudFrontUtilities.getCookiesForCustomPolicy(customSignerRequest);
+            CookiesForCustomPolicy signedCookie = cloudFrontUtilities.getCookiesForCustomPolicy(customSignerRequest);
 
             Map<String, String> cookies = new HashMap<>();
-            cookies.put("CloudFront-Key-Pair-Id", signedCookie.keyPairIdHeaderValue());
-            cookies.put("CloudFront-Signature", signedCookie.signatureHeaderValue());
-            cookies.put("CloudFront-Policy", ((software.amazon.awssdk.services.cloudfront.cookie.CookiesForCustomPolicy) signedCookie).policyHeaderValue());
+
+
+            String keyPairIdValue = extractCookieValue(signedCookie.keyPairIdHeaderValue());
+            String signatureValue = extractCookieValue(signedCookie.signatureHeaderValue());
+            String policyValue = extractCookieValue(signedCookie.policyHeaderValue());
+
+
+            cookies.put("CloudFront-Key-Pair-Id", keyPairIdValue);
+            cookies.put("CloudFront-Signature", signatureValue);
+            cookies.put("CloudFront-Policy", policyValue);
+
+            log.info("Policy Resource Path: {}", policyResourcePath);
+            log.info("Key Pair ID: {}", keyPairId);
+            log.info("CloudFront Domain: {}", cloudFrontDomain);
 
             log.info("Cookies assinados do CloudFront gerados para o usuário {}", userId);
             return cookies;
@@ -140,6 +153,14 @@ public class AwsService {
             case "wav" -> "audio/wav";
             default -> "application/octet-stream";
         };
+    }
+
+    private String extractCookieValue(String headerValue) {
+        if (headerValue == null || !headerValue.contains("=")) {
+            return ""; // Retorna vazio se o formato for inesperado
+        }
+        // Encontra o índice do primeiro '=' e pega a substring a partir do próximo caractere
+        return headerValue.substring(headerValue.indexOf('=') + 1);
     }
 }
 

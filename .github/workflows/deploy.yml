@@ -68,7 +68,7 @@ jobs:
                   SERVER_PORT: 9090
                   SPRING_DATASOURCE_URL: ${{ secrets.DB_URL_PROD }}
                   SPRING_DATASOURCE_USERNAME: ${{ secrets.DB_USERNAME_PROD }}
-                  SPRING_DATASOURCE_PASSWORD: ${{ secrets.DB_PASSWORD_PROD }}
+                  SPRING_DATASOURCE_PASSWORD: "${{ secrets.DB_PASSWORD_PROD }}"
                   SPRING_JPA_HIBERNATE_DDL_AUTO: update
                   JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
                   GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}

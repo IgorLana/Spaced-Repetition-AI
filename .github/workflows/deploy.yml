@@ -70,7 +70,7 @@ jobs:
                   SPRING_DATASOURCE_USERNAME: ${{ secrets.DB_USERNAME_PROD }}
                   SPRING_DATASOURCE_PASSWORD: ${{ secrets.DB_PASSWORD_PROD }}
                   SPRING_JPA_HIBERNATE_DDL_AUTO: update
-                  JWT_SECRET-KEY: ${{ secrets.JWT_SECRET_KEY }}
+                  JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
                   GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
                   API_V1_MERCADOPAGO-ACCESS-TOKEN: ${{ secrets.MERCADOPAGO_ACCESS_TOKEN }}
                   AWS_S3_BUCKET-NAME: ${{ secrets.AWS_S3_BUCKET_NAME }}

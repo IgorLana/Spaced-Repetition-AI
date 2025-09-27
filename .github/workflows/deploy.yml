@@ -84,7 +84,7 @@ jobs:
                   CLOUDFront_KEY-PAIR-ID: ${{ secrets.CLOUDFRONT_KEY_PAIR_ID }}
                   CLOUDFRONT_PRIVATE-KEY-PATH: /app/keys/cloudfront_private_key.pem
                   COOKIE-DOMAIN: ${{ secrets.COOKIE_DOMAIN }}
-                  APP_OAUTH2_REDIRECT-URI: ${{ secrets.APP_OAUTH2_REDIRECT_URI }}
+                  APP_OAUTH2_REDIRECT-URI: "${{ secrets.APP_OAUTH2_REDIRECT_URI }}"
                   SPRING_MAIL_HOST: smtp.gmail.com
                   SPRING_MAIL_PORT: 587
                   SPRING_MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}

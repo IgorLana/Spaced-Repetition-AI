@@ -82,7 +82,7 @@ jobs:
                   AWS_S3_BUCKET_NAME: ${{ secrets.AWS_S3_BUCKET_NAME }}
                   AWS_S3_REGION: ${{ secrets.AWS_S3_REGION }}
                   CLOUDFRONT_DOMAIN_NAME: ${{ secrets.CLOUDFRONT_DOMAIN_NAME }}
-                  CLOUDFront_KEY_PAIR_ID: ${{ secrets.CLOUDFRONT_KEY_PAIR_ID }}
+                  CLOUDFront_KEY_PAIR_ID: "${{ secrets.CLOUDFRONT_KEY_PAIR_ID }}"
                   CLOUDFRONT_PRIVATE_KEY_PATH: /app/keys/cloudfront_private_key.pem
                   COOKIE_DOMAIN: ${{ secrets.COOKIE_DOMAIN }}
                   APP_OAUTH2_REDIRECT_URI: "https://cdn.mnemus.tech/auth/callback"

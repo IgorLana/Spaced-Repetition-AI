@@ -61,33 +61,39 @@ jobs:
                 ports:
                   - "9090:9090"
                 environment:
-                  # PROPRIEDADES DO SPRING BOOT (Formato de Variável de Ambiente)
-                  SERVER_PORT: 9090
-                  SPRING_DATASOURCE_URL: ${{ secrets.DB_URL_PROD }}
-                  SPRING_DATASOURCE_USERNAME: ${{ secrets.DB_USERNAME_PROD }}
-                  SPRING_DATASOURCE_PASSWORD: ${{ secrets.DB_PASSWORD_PROD }}
-                  SPRING_JPA_HIBERNATE_DDL_AUTO: update
-                  JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
-                  GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-                  API_V1_MERCADOPAGO-ACCESS-TOKEN: ${{ secrets.MERCADOPAGO_ACCESS_TOKEN }}
-                  AWS_S3_BUCKET-NAME: ${{ secrets.AWS_S3_BUCKET_NAME }}
-                  AWS_S3_REGION: ${{ secrets.AWS_S3_REGION }}
-                  CLOUDFRONT_DOMAIN-NAME: ${{ secrets.CLOUDFRONT_DOMAIN_NAME }}
-                  CLOUDFRONT_KEY-PAIR-ID: ${{ secrets.CLOUDFRONT_KEY_PAIR_ID }}
-                  CLOUDFRONT_PRIVATE-KEY-PATH: /app/keys/cloudfront_private_key.pem
-                  COOKIE-DOMAIN: ${{ secrets.COOKIE_DOMAIN }}
-                  APP_OAUTH2_REDIRECT-URI: ${{ secrets.APP_OAUTH2_REDIRECT_URI }}
-                  SPRING_MAIL_HOST: smtp.gmail.com
-                  SPRING_MAIL_PORT: 587
-                  SPRING_MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
-                  SPRING_MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
-                  SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: true
-                  SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: true
-                  SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT-ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-                  SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT-SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-                  SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GITHUB_CLIENT-ID: ${{ secrets.GIT_CLIENT_ID }}
-                  SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GITHUB_CLIENT-SECRET: ${{ secrets.GIT_CLIENT_SECRET }}
-                  SPRING_JACKSON_TIME-ZONE: UTC
+                  # ================================================================
+                  # = LINHA CORRIGIDA: ATIVA O PERFIL DE PRODUÇÃO                    =
+                  # ================================================================
+                  - SPRING_PROFILES_ACTIVE=prod
+                  # BANCO DE DADOS E JWT
+                  - DB_URL_PROD=${{ secrets.DB_URL_PROD }}
+                  - DB_USERNAME_PROD=${{ secrets.DB_USERNAME_PROD }}
+                  - DB_PASSWORD_PROD=${{ secrets.DB_PASSWORD_PROD }}
+                  - JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}
+                  # APIS
+                  - GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+                  - MERCADOPAGO_ACCESS_TOKEN=${{ secrets.MERCADOPAGO_ACCESS_TOKEN }}
+                  # AWS
+                  - AWS_S3_BUCKET_NAME=${{ secrets.AWS_S3_BUCKET_NAME }}
+                  - AWS_S3_REGION=${{ secrets.AWS_S3_REGION }}
+                  - CLOUDFRONT_DOMAIN_NAME=${{ secrets.CLOUDFRONT_DOMAIN_NAME }}
+                  - CLOUDFRONT_KEY_PAIR_ID=${{ secrets.CLOUDFRONT_KEY_PAIR_ID }}
+                  - CLOUDFRONT_PRIVATE_KEY_PATH=/app/keys/cloudfront_private_key.pem
+                  # DOMINIOS E REDIRECTS
+                  - COOKIE_DOMAIN=${{ secrets.COOKIE_DOMAIN }}
+                  - APP_OAUTH2_REDIRECT_URI=${{ secrets.APP_OAUTH2_REDIRECT_URI }}
+                  # E-MAIL
+                  - MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}
+                  - MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
+                  # OAUTH2
+                  - GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+                  - GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+                  - GIT_CLIENT_ID=${{ secrets.GIT_CLIENT_ID }}
+                  - GIT_CLIENT_SECRET=${{ secrets.GIT_CLIENT_SECRET }}
+                  # ETC
+                  - spring.jpa.hibernate.ddl-auto=update
+                  - spring.jackson.time-zone=UTC
+                  - server.port=9090
                 volumes:
                   - /home/ec2-user/keys:/app/keys:ro
                 restart: always

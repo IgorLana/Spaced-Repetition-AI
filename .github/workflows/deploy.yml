@@ -3,7 +3,7 @@ name: Build, Push, and Deploy to AWS EC2
 on:
   push:
     branches:
-      - master # Gatilho para a branch 'master'
+      - master
 
 jobs:
   deploy:
@@ -12,15 +12,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # ================================================================
-      # = PASSO DE DEBUG TEMPORÁRIO                                    =
-      # ================================================================
-      - name: Debug AWS Secrets
-        run: |
-          echo "AWS_REGION: ${{ secrets.AWS_REGION }}"
-          echo "AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}"
-          # A linha abaixo irá imprimir '***' se o segredo existir, ou nada se não existir.
-          echo "AWS_SECRET_ACCESS_KEY_EXISTS: ${{ secrets.AWS_SECRET_ACCESS_KEY != '' }}"
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -37,8 +35,8 @@ jobs:
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: sra-repository # O nome do seu repositório ECR
-          IMAGE_TAG: ${{ github.sha }} # Usa o hash do commit como tag da imagem
+          ECR_REPOSITORY: sra-repository
+          IMAGE_TAG: ${{ github.sha }}
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
@@ -51,17 +49,10 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # Faz o login no ECR a partir da instância EC2 para poder baixar a imagem
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REPOSITORY_URI }}
-
-            # Cria o diretório para a chave privada do CloudFront
             mkdir -p /home/ec2-user/keys
-
-            # Coloca a chave privada do CloudFront (vinda dos secrets) em um arquivo na EC2
             echo "${{ secrets.CLOUDFRONT_PRIVATE_KEY }}" > /home/ec2-user/keys/cloudfront_private_key.pem
-
-            # Cria (ou atualiza) o arquivo docker-compose.yml na EC2
-            # Injeta a nova tag da imagem e todos os segredos como variáveis de ambiente
+            
             cat << EOF > /home/ec2-user/docker-compose.yml
             version: '3.8'
             services:
@@ -70,29 +61,38 @@ jobs:
                 ports:
                   - "9090:9090"
                 environment:
-                  - SPRING_PROFILES_ACTIVE=prod
-                  - DB_URL_PROD=${{ secrets.DB_URL_PROD }}
-                  - DB_USERNAME_PROD=${{ secrets.DB_USERNAME_PROD }}
-                  - DB_PASSWORD_PROD=${{ secrets.DB_PASSWORD_PROD }}
-                  - JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}
-                  - GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
-                  - MERCADOPAGO_ACCESS_TOKEN=${{ secrets.MERCADOPAGO_ACCESS_TOKEN }}
-                  - AWS_S3_BUCKET_NAME=${{ secrets.AWS_S3_BUCKET_NAME }}
-                  - CLOUDFRONT_DOMAIN_NAME=${{ secrets.CLOUDFRONT_DOMAIN_NAME }}
-                  - CLOUDFRONT_KEY_PAIR_ID=${{ secrets.CLOUDFRONT_KEY_PAIR_ID }}
-                  - CLOUDFRONT_PRIVATE_KEY_PATH=/app/keys/cloudfront_private_key.pem
-                  - COOKIE_DOMAIN=${{ secrets.COOKIE_DOMAIN }}
-                  - APP_OAUTH2_REDIRECT_URI=${{ secrets.APP_OAUTH2_REDIRECT_URI }}
-                  - MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}
-                  - MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
+                  # PROPRIEDADES DO SPRING BOOT (Formato de Variável de Ambiente)
+                  SERVER_PORT: 9090
+                  SPRING_DATASOURCE_URL: ${{ secrets.DB_URL_PROD }}
+                  SPRING_DATASOURCE_USERNAME: ${{ secrets.DB_USERNAME_PROD }}
+                  SPRING_DATASOURCE_PASSWORD: ${{ secrets.DB_PASSWORD_PROD }}
+                  SPRING_JPA_HIBERNATE_DDL_AUTO: update
+                  JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+                  GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+                  API_V1_MERCADOPAGO-ACCESS-TOKEN: ${{ secrets.MERCADOPAGO_ACCESS_TOKEN }}
+                  AWS_S3_BUCKET-NAME: ${{ secrets.AWS_S3_BUCKET_NAME }}
+                  AWS_S3_REGION: ${{ secrets.AWS_S3_REGION }}
+                  CLOUDFRONT_DOMAIN-NAME: ${{ secrets.CLOUDFRONT_DOMAIN_NAME }}
+                  CLOUDFRONT_KEY-PAIR-ID: ${{ secrets.CLOUDFRONT_KEY_PAIR_ID }}
+                  CLOUDFRONT_PRIVATE-KEY-PATH: /app/keys/cloudfront_private_key.pem
+                  COOKIE-DOMAIN: ${{ secrets.COOKIE_DOMAIN }}
+                  APP_OAUTH2_REDIRECT-URI: ${{ secrets.APP_OAUTH2_REDIRECT_URI }}
+                  SPRING_MAIL_HOST: smtp.gmail.com
+                  SPRING_MAIL_PORT: 587
+                  SPRING_MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
+                  SPRING_MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
+                  SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: true
+                  SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: true
+                  SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT-ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+                  SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT-SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+                  SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GITHUB_CLIENT-ID: ${{ secrets.GIT_CLIENT_ID }}
+                  SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GITHUB_CLIENT-SECRET: ${{ secrets.GIT_CLIENT_SECRET }}
+                  SPRING_JACKSON_TIME-ZONE: UTC
                 volumes:
-                  # Mapeia a chave da EC2 para dentro do contêiner
                   - /home/ec2-user/keys:/app/keys:ro
                 restart: always
             EOF
-
-            # Navega para o diretório e executa o Docker Compose
-            # Usamos `docker-compose` com hífen, conforme a instalação manual que fizemos
+            
             cd /home/ec2-user
             docker-compose pull
             docker-compose up -d --force-recreate

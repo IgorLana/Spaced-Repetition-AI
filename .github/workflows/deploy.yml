@@ -69,8 +69,9 @@ jobs:
                   SPRING_DATASOURCE_URL: ${{ secrets.DB_URL_PROD }}
                   SPRING_DATASOURCE_USERNAME: ${{ secrets.DB_USERNAME_PROD }}
                   SPRING_DATASOURCE_PASSWORD: "${{ secrets.DB_PASSWORD_PROD }}"
-                  AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
-                  AWS_SECRET_ACCESS_KEY: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+                  aws.access-key: "${{ secrets.AWS_ACCESS_KEY_ID }}"
+                  aws.secret-key: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+                  aws.region: "${{ secrets.AWS_REGION }}"
                   SPRING_JPA_HIBERNATE_DDL_AUTO: update
                   JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
                   GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}

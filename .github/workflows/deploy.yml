@@ -79,12 +79,12 @@ jobs:
                   JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
                   GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
                   API_V1_MERCADOPAGO-ACCESS-TOKEN: ${{ secrets.MERCADOPAGO_ACCESS_TOKEN }}
-                  AWS_S3_BUCKET-NAME: ${{ secrets.AWS_S3_BUCKET_NAME }}
+                  AWS_S3_BUCKET_NAME: ${{ secrets.AWS_S3_BUCKET_NAME }}
                   AWS_S3_REGION: ${{ secrets.AWS_S3_REGION }}
                   CLOUDFRONT_DOMAIN-NAME: ${{ secrets.CLOUDFRONT_DOMAIN_NAME }}
-                  CLOUDFront_KEY-PAIR-ID: ${{ secrets.CLOUDFRONT_KEY_PAIR_ID }}
-                  CLOUDFRONT_PRIVATE-KEY-PATH: /app/keys/cloudfront_private_key.pem
-                  COOKIE-DOMAIN: ${{ secrets.COOKIE_DOMAIN }}
+                  CLOUDFront_KEY_PAIR_ID: ${{ secrets.CLOUDFRONT_KEY_PAIR_ID }}
+                  CLOUDFRONT_PRIVATE_KEY_PATH: /app/keys/cloudfront_private_key.pem
+                  COOKIE_DOMAIN: ${{ secrets.COOKIE_DOMAIN }}
                   APP_OAUTH2_REDIRECT_URI: "https://cdn.mnemus.tech/auth/callback"
                   SPRING_MAIL_HOST: smtp.gmail.com
                   SPRING_MAIL_PORT: 587

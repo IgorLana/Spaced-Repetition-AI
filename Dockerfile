@@ -18,4 +18,4 @@ COPY --from=build /app/target/*.jar app.jar
 # A porta 9090 está correta, baseado no seu código.
 EXPOSE 9090
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT java -jar app.jar

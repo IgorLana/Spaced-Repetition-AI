@@ -63,6 +63,7 @@ jobs:
                 image: ${{ steps.build-image.outputs.image }}
                 ports:
                   - "9090:9090"
+                command: printenv
                 environment:
                   SPRING_PROFILES_ACTIVE: prod
                   SERVER_PORT: 9090

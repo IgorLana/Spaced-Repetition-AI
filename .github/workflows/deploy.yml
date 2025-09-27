@@ -78,7 +78,7 @@ jobs:
                   SPRING_JPA_HIBERNATE_DDL_AUTO: update
                   JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
                   GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-                  API_V1_MERCADOPAGO-ACCESS-TOKEN: ${{ secrets.MERCADOPAGO_ACCESS_TOKEN }}
+                  API_V1_MERCADOPAGO_ACCESS_TOKEN: ${{ secrets.MERCADOPAGO_ACCESS_TOKEN }}
                   AWS_S3_BUCKET_NAME: ${{ secrets.AWS_S3_BUCKET_NAME }}
                   AWS_S3_REGION: ${{ secrets.AWS_S3_REGION }}
                   CLOUDFRONT_DOMAIN_NAME: ${{ secrets.CLOUDFRONT_DOMAIN_NAME }}
@@ -92,11 +92,11 @@ jobs:
                   SPRING_MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
                   SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: true
                   SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: true
-                  SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT-ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-                  SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT-SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-                  SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GITHUB_CLIENT-ID: ${{ secrets.GIT_CLIENT_ID }}
-                  SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GITHUB_CLIENT-SECRET: ${{ secrets.GIT_CLIENT_SECRET }}
-                  SPRING_JACKSON_TIME-ZONE: UTC
+                  SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+                  SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+                  SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GITHUB_CLIENT_ID: ${{ secrets.GIT_CLIENT_ID }}
+                  SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GITHUB_CLIENT_SECRET: ${{ secrets.GIT_CLIENT_SECRET }}
+                  SPRING_JACKSON_TIME_ZONE: UTC
                 volumes:
                   - /home/ec2-user/keys:/app/keys:ro
                 restart: always

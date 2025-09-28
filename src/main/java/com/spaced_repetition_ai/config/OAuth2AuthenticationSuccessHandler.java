@@ -66,8 +66,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
      * da transação que salva o novo usuário.
      */
     private UserEntity findUserAfterRegistration(String email) {
-        int retries = 10;
-        long delay = 200;
+        int retries = 20;
+        long delay = 500;
 
         for (int i = 0; i < retries; i++) {
             Optional<UserEntity> userOptional = userRepository.findByEmail(email);

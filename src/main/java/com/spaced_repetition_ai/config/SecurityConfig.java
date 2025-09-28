@@ -36,7 +36,7 @@ public class SecurityConfig {
                 .cors(withDefaults())
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**", "/oauth2/**", "/error").permitAll()
+                        .requestMatchers("/api/auth/**", "/oauth2/**","/auth/**", "/error").permitAll()
                         .requestMatchers("/storage/**").permitAll()
                         .requestMatchers("/api/v1/webhooks/**").permitAll()
                         .anyRequest().authenticated()

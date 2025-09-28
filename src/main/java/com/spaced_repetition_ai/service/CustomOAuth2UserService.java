@@ -41,6 +41,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         String name;
         AuthProvider authProvider;
 
+
+
         if ("github".equalsIgnoreCase(provider)) {
 
             authProvider = AuthProvider.GITHUB;
@@ -70,6 +72,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             throw new OAuth2AuthenticationException("Não foi possível obter o e-mail do provedor " + provider);
         }
 
+        log.info("Email e name:{}{}", email, name);
+
         Optional<UserEntity> userOptional = userRepository.findByEmail(email);
         UserEntity userEntity;
 
@@ -94,6 +98,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 .balance(60)
                 .build();
         try {
+            log.info("Usuario salvo" + email + name);
             return userRepository.save(newUser);
         } catch (Exception e) {
             throw new OAuth2AuthenticationException("Falha ao registar novo utilizador. Detalhes: " + e.getMessage());

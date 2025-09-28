@@ -19,7 +19,7 @@ public class EmailService {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(to);
         message.setSubject("Verifique a sua conta");
-        String verificationUrl = "http:/localhost:9090/api/auth/verify?token=" + token;
+        String verificationUrl = "https:/mnemus.tech/api/auth/verify?token=" + token;
         message.setText("Para verificar sua conta, clique no link abaixo:\n" + verificationUrl);
 
         try {

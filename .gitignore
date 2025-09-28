@@ -36,5 +36,21 @@ build/
 
 /Storage
 
+# Pasta de armazenamento local
+Storage/
+A:/
 
+# Arquivos de sistema do macOS e Windows
+.DS_Store
+Thumbs.db
+
+# Arquivos gerados pelo Maven
+/target/
+
+# Arquivos do IntelliJ e VS Code
+.idea/
+.vscode/
+
+# Logs
+*.log
 

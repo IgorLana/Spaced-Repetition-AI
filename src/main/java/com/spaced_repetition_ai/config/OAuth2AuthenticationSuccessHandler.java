@@ -21,7 +21,7 @@ import java.util.Optional;
 public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     private final JwtService jwtService;
-    private final UserRepository userRepository; // Adicionado para buscar o usuário
+    private final UserRepository userRepository;
 
     @Value("${app.oauth2.redirect-uri}")
     private String redirectUri;
@@ -30,32 +30,26 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
         UserEntity userEntity;
         Object principal = authentication.getPrincipal();
-        System.out.println("Testando 1 ___________" + request + "Test 2___________" + response);
 
-        // ✅ LÓGICA ATUALIZADA PARA LIDAR COM MÚLTIPLOS PROVEDORES
         if (principal instanceof UserEntity) {
-            // Se o principal já é nossa entidade (caso do GitHub), usamos diretamente.
             userEntity = (UserEntity) principal;
         } else if (principal instanceof OAuth2User) {
-            // Se for um OidcUser (caso do Google) ou outro OAuth2User, extraímos o e-mail
-            // e buscamos nossa entidade no banco de dados para garantir que temos o objeto correto.
+
             OAuth2User oauth2User = (OAuth2User) principal;
             String email = oauth2User.getAttribute("email");
-            System.out.println("teste 3 ___________" + email);
+
             if (email == null) {
                 throw new IllegalArgumentException("Não foi possível extrair o e-mail do usuário OAuth2.");
             }
             // Usamos o método com retentativa para evitar a condição de corrida
             userEntity = findUserAfterRegistration(email);
-            System.out.println("teste 3 ___________" + email);
+
         } else {
             throw new IllegalArgumentException("Tipo de principal de autenticação não suportado: " + principal.getClass().getName());
         }
 
 
 
-
-        // A partir daqui, o fluxo é o mesmo
         String token = jwtService.generateToken(userEntity);
 
         String targetUrl = UriComponentsBuilder.fromUriString(redirectUri)
@@ -72,8 +66,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
      * da transação que salva o novo usuário.
      */
     private UserEntity findUserAfterRegistration(String email) {
-        int retries = 5;
-        long delay = 100;
+        int retries = 10;
+        long delay = 200;
 
         for (int i = 0; i < retries; i++) {
             Optional<UserEntity> userOptional = userRepository.findByEmail(email);

@@ -73,7 +73,7 @@ public class AwsService {
         try {
             // A URL do recurso para a política é o domínio e o caminho base dos arquivos.
             // Teste com um path mais amplo primeiro
-            String policyResourcePath = "https://" + cloudFrontDomain + "/*";
+            String policyResourcePath = "https://" + cloudFrontDomain + "/users/" + userId + "/*";
 
             // Carregue a chave privada a partir do arquivo
             PrivateKey privateKey = loadPrivateKeyFromFile(privateKeyPath);

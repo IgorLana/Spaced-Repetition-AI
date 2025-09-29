@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
@@ -28,6 +29,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private final JwtService jwtService;
     private final UserRepository userRepository;
     private final AwsService awsService;
+    @Value("${cookie-domain}")
+    private String cookieDomain;
 
     @Value("${app.oauth2.redirect-uri}")
     private String redirectUri;
@@ -61,9 +64,34 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         String token = jwtService.generateToken(userEntity);
 
         Map<String, String> signedCookies = awsService.getSignedCloudFrontCookies(userEntity.getId());
-        for (Map.Entry<String, String> entry : signedCookies.entrySet()) {
-            response.addHeader(HttpHeaders.SET_COOKIE, entry.getValue());
-        }
+
+        ResponseCookie keyPairId = ResponseCookie.from("CloudFront-Key-Pair-Id", signedCookies.get("CloudFront-Key-Pair-Id"))
+                .domain(cookieDomain)
+                .path("/")
+                .httpOnly(true)
+                .secure(true) // ESSENCIAL para SameSite=None
+                .sameSite("None")
+                .build();
+
+        ResponseCookie signature = ResponseCookie.from("CloudFront-Signature", signedCookies.get("CloudFront-Signature"))
+                .domain(cookieDomain)
+                .path("/")
+                .httpOnly(true)
+                .secure(true) // ESSENCIAL para SameSite=None
+                .sameSite("None")
+                .build();
+
+        ResponseCookie policy = ResponseCookie.from("CloudFront-Policy", signedCookies.get("CloudFront-Policy"))
+                .domain(cookieDomain)
+                .path("/")
+                .httpOnly(true)
+                .secure(true) // ESSENCIAL para SameSite=None
+                .sameSite("None")
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, keyPairId.toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, signature.toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, policy.toString());
 
         String targetUrl = UriComponentsBuilder.fromUriString(redirectUri)
                 .queryParam("token", token)

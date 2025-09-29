@@ -2,12 +2,14 @@ package com.spaced_repetition_ai.config;
 
 import com.spaced_repetition_ai.entity.UserEntity;
 import com.spaced_repetition_ai.repository.UserRepository;
+import com.spaced_repetition_ai.service.AwsService;
 import com.spaced_repetition_ai.service.JwtService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
@@ -15,6 +17,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.Optional;
 
 @Component
@@ -24,6 +27,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
     private final JwtService jwtService;
     private final UserRepository userRepository;
+    private final AwsService awsService;
 
     @Value("${app.oauth2.redirect-uri}")
     private String redirectUri;
@@ -55,6 +59,11 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
 
         String token = jwtService.generateToken(userEntity);
+
+        Map<String, String> signedCookies = awsService.getSignedCloudFrontCookies(userEntity.getId());
+        for (Map.Entry<String, String> entry : signedCookies.entrySet()) {
+            response.addHeader(HttpHeaders.SET_COOKIE, entry.getValue());
+        }
 
         String targetUrl = UriComponentsBuilder.fromUriString(redirectUri)
                 .queryParam("token", token)

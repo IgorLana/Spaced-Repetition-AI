@@ -33,26 +33,12 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         UserEntity userEntity;
         Object principal = authentication.getPrincipal();
 
-        log.info("Salvando usuario________222333");
 
         if (principal instanceof UserEntity) {
             userEntity = (UserEntity) principal;
-        } else if (principal instanceof OAuth2User) {
-
-            OAuth2User oauth2User = (OAuth2User) principal;
-            String email = oauth2User.getAttribute("email");
-
-            if (email == null) {
-                throw new IllegalArgumentException("Não foi possível extrair o e-mail do usuário OAuth2.");
-            }
-            // Usamos o método com retentativa para evitar a condição de corrida
-            userEntity = findUserAfterRegistration(email);
-
         } else {
             throw new IllegalArgumentException("Tipo de principal de autenticação não suportado: " + principal.getClass().getName());
         }
-
-
 
         String token = jwtService.generateToken(userEntity);
 
@@ -64,11 +50,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
 
-    /**
-     * Tenta encontrar o usuário no banco de dados com algumas retentativas.
-     * Isso resolve a race condition onde este handler é executado antes do commit
-     * da transação que salva o novo usuário.
-     */
+
+
     private UserEntity findUserAfterRegistration(String email) {
         int retries = 20;
         long delay = 500;

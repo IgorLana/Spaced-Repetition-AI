@@ -41,7 +41,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         String name;
         AuthProvider authProvider;
 
-
+        log.info("Provedor de login: {}", provider);
 
         if ("github".equalsIgnoreCase(provider)) {
 
@@ -97,6 +97,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 .authProvider(authProvider)
                 .balance(60)
                 .build();
+
+        log.info("Salvando usuario________");
         try {
             log.info("Usuario salvo" + email + name);
             return userRepository.save(newUser);

@@ -6,6 +6,7 @@ import com.spaced_repetition_ai.service.JwtService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -18,6 +19,7 @@ import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     private final JwtService jwtService;
@@ -30,6 +32,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
         UserEntity userEntity;
         Object principal = authentication.getPrincipal();
+
+        log.info("Salvando usuario________222333");
 
         if (principal instanceof UserEntity) {
             userEntity = (UserEntity) principal;
@@ -68,6 +72,9 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private UserEntity findUserAfterRegistration(String email) {
         int retries = 20;
         long delay = 500;
+
+        log.info("Salvando usuario________22");
+
 
         for (int i = 0; i < retries; i++) {
             Optional<UserEntity> userOptional = userRepository.findByEmail(email);

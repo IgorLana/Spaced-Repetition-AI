@@ -4,10 +4,7 @@ package com.spaced_repetition_ai.entity;
 import com.spaced_repetition_ai.model.AuthProvider;
 import com.spaced_repetition_ai.model.Role;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -23,7 +20,8 @@ import java.util.List;
 import java.util.Map;
 
 @Builder
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
@@ -58,20 +56,12 @@ public class UserEntity implements UserDetails, OidcUser {
             cascade = CascadeType.ALL,
             orphanRemoval = true
     )
+    @Builder.Default
     private List<DeckEntity> deckEntity = new ArrayList<>();
 
-
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
-    }
-
-    @Override
-    public String getUsername() {
-        return email;
-    }
-
-
+    // Campos transientes para OAuth2/OIDC
+    @Transient
+    private Map<String, Object> attributes;
 
     @Transient
     private Map<String, Object> claims;
@@ -82,29 +72,15 @@ public class UserEntity implements UserDetails, OidcUser {
     @Transient
     private OidcIdToken idToken;
 
-
-
-    @Transient
-    private Map<String, Object> attributes;
-
+    // Implementação de UserDetails
     @Override
-    public String getName() {
-        return this.name;
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
     }
 
     @Override
-    public Map<String, Object> getClaims() {
-        return this.claims;
-    }
-
-    @Override
-    public OidcUserInfo getUserInfo() {
-        return this.userInfo;
-    }
-
-    @Override
-    public OidcIdToken getIdToken() {
-        return this.idToken;
+    public String getUsername() {
+        return email;
     }
 
     @Override
@@ -127,4 +103,29 @@ public class UserEntity implements UserDetails, OidcUser {
         return this.isVerified;
     }
 
+    // Implementação de OidcUser
+    @Override
+    public String getName() {
+        return this.name;
+    }
+
+    @Override
+    public Map<String, Object> getAttributes() {
+        return this.attributes;
+    }
+
+    @Override
+    public Map<String, Object> getClaims() {
+        return this.claims;
+    }
+
+    @Override
+    public OidcUserInfo getUserInfo() {
+        return this.userInfo;
+    }
+
+    @Override
+    public OidcIdToken getIdToken() {
+        return this.idToken;
+    }
 }

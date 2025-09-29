@@ -1,6 +1,7 @@
 package com.spaced_repetition_ai.config;
 
 import com.spaced_repetition_ai.service.CustomOAuth2UserService;
+import com.spaced_repetition_ai.service.CustomOidcUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,7 +31,10 @@ public class SecurityConfig {
     private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, CustomOAuth2UserService customOAuth2UserService, OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSucessHandler) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                                   CustomOAuth2UserService customOAuth2UserService,
+                                                   OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSucessHandler,
+                                                   CustomOidcUserService customOidcUserService) throws Exception {
         http
                 // HABILITA O CORS USANDO O BEAN
                 .cors(withDefaults())
@@ -46,6 +50,7 @@ public class SecurityConfig {
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .oauth2Login(oauth2 -> oauth2
                         .userInfoEndpoint(userInfo -> userInfo
+                                .oidcUserService(customOidcUserService)      // 🔵 Para Google (OIDC)
                                 .userService(customOAuth2UserService)
                         )
                         .successHandler(oAuth2AuthenticationSucessHandler)

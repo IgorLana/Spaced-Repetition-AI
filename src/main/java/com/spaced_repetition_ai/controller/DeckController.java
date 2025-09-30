@@ -1,6 +1,7 @@
 package com.spaced_repetition_ai.controller;
 
 
+import com.spaced_repetition_ai.dto.DeckDetailsReponseDTO;
 import com.spaced_repetition_ai.dto.DeckRequestDTO;
 import com.spaced_repetition_ai.dto.DeckResponseDTO;
 import com.spaced_repetition_ai.dto.DeckUpdateDTO;
@@ -47,6 +48,11 @@ public class DeckController {
     @DeleteMapping("/{deckId}")
     public void deleteDeck(@PathVariable("deckId") Long deckId) {
         deckService.removerDeck(deckId);
+    }
+
+    @GetMapping("/{deckId}")
+    public DeckDetailsReponseDTO deckDetails(@PathVariable("deckId") Long deckId){
+        return deckService.getDeckInfo(deckId);
     }
 
 }

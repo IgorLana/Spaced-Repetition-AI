@@ -1,5 +1,6 @@
 package com.spaced_repetition_ai.service;
 
+import com.spaced_repetition_ai.dto.DeckDetailsReponseDTO;
 import com.spaced_repetition_ai.dto.DeckRequestDTO;
 import com.spaced_repetition_ai.dto.DeckResponseDTO;
 import com.spaced_repetition_ai.dto.DeckUpdateDTO;
@@ -10,11 +11,13 @@ import com.spaced_repetition_ai.model.DeckType;
 import com.spaced_repetition_ai.model.ImageStyle;
 import com.spaced_repetition_ai.model.Language;
 import com.spaced_repetition_ai.repository.DeckRepository;
+import com.spaced_repetition_ai.repository.FlashCardRepository;
 import com.spaced_repetition_ai.repository.UserRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -25,10 +28,12 @@ public class DeckService {
 
     private final DeckRepository deckRepository;
     private final UserRepository userRepository;
+    private final FlashCardRepository flashCardRepository;
 
-    public DeckService(DeckRepository deckRepository, UserRepository userRepository) {
+    public DeckService(DeckRepository deckRepository, UserRepository userRepository, FlashCardRepository flashCardRepository) {
         this.deckRepository = deckRepository;
         this.userRepository = userRepository;
+        this.flashCardRepository = flashCardRepository;
     }
 
     public List<DeckResponseDTO> getDecks() {
@@ -40,6 +45,39 @@ public class DeckService {
         return decks.stream()
                 .map(DeckResponseDTO::fromEntity)
                 .collect(Collectors.toList());
+    }
+
+    public DeckDetailsReponseDTO getDeckInfo(Long deckId){
+        UserEntity usuarioLogado = getUsuarioLogado();
+
+        int flashcardsToReview = flashCardRepository.findReviewableCardsByDeckAndUser(deckId, usuarioLogado.getId(), LocalDateTime.now()).size();
+        int totalFlashcardsDeck = flashCardRepository.findByDeckId(deckId).size();
+
+
+
+        DeckEntity deck = deckRepository.findByUserIdAndId(usuarioLogado.getId(), deckId)
+                .orElseThrow(() -> new RuntimeException("Deck não encontrado"));
+
+        double scoreDeck = deck.getTotalReviewRate() / (double) deck.getTotalReviewCount();
+
+                return new DeckDetailsReponseDTO(
+                        deck.getId(),
+                        deck.getName(),
+                        deck.getDescription(),
+                        deck.getTargetLanguage(),
+                        deck.getSourceLanguage(),
+                        deck.getEaseFactor(),
+                        deck.getGenerateImage(),
+                        deck.getGenerateAudio(),
+                        deck.getDeckType(),
+                        flashcardsToReview,
+                        totalFlashcardsDeck,
+                        scoreDeck
+                );
+
+
+
+
     }
 
 

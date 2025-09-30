@@ -10,7 +10,7 @@ The style should always be **cinematic**, with realistic composition, dramatic l
 - Linework: **detailed, with depth and texture**
 - Colors: **inspired by the movie's/series' color palette** (warm, cool, or desaturated, according to the work)
 - Atmosphere: epic, dramatic, or nostalgic
-- Influences: major works like *Star Wars*, *Harry Potter*, *The Lord of the Rings*, *Breaking Bad*, *Game of Thrones*, *Friends*, *Stranger Things*
+- Influences: major works like, *Harry Potter*, *The Lord of the Rings*, *Breaking Bad*, *Game of Thrones*, *Friends*, *Stranger Things*, *The Godfather*, *matrix*, *Pulp Fiction*, *Fight Club*, *Interstellar*
 
 ## Character
 - Origin: iconic character or one inspired by archetypes from the movie/series

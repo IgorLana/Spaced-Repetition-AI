@@ -8,6 +8,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,6 +36,10 @@ public class DeckEntity {
     private boolean generateImage;
     private boolean generateAudio;
     private DeckType deckType;
+    @ColumnDefault("0")
+    private int totalReviewCount;
+    @ColumnDefault("0")
+    private int totalReviewRate;
 
     private ImageStyle imageStyle;
 

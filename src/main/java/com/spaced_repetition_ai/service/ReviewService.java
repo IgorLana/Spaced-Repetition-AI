@@ -1,5 +1,6 @@
 package com.spaced_repetition_ai.service;
 
+import com.spaced_repetition_ai.entity.DeckEntity;
 import com.spaced_repetition_ai.entity.FlashCardEntity;
 import com.spaced_repetition_ai.entity.ReviewEntity;
 import com.spaced_repetition_ai.entity.UserEntity;
@@ -75,6 +76,8 @@ public class ReviewService {
                 card.setRating(rating);
                 flashCardRepository.save(card);
 
+
+                // Salvando o review no banco de review
                 Long deckId = card.getDeck().getId();
                 Long flashCardId = card.getId();
                 LocalDateTime reviewDate = LocalDateTime.now();
@@ -88,6 +91,14 @@ public class ReviewService {
 
                 reviewRepository.save(reviewEntity);
 
+
+                // Salvando a nota geral do deck
+
+                DeckEntity deck = setDeckScore(rating, card);
+                deckRepository.save(deck);
+
+
+
                 System.out.println("FlashCard revisado com sucesso!");
 
             } else {
@@ -95,6 +106,38 @@ public class ReviewService {
         }
 
 
+    }
+
+    private static DeckEntity setDeckScore(ReviewRating rating, FlashCardEntity card) {
+        DeckEntity deck = card.getDeck();
+
+
+        int totalReviewCount = deck.getTotalReviewCount();
+        int totalReviewRate = deck.getTotalReviewRate();
+
+        switch (rating) {
+            case DIFICIL:
+                totalReviewCount++;
+                totalReviewRate += 4;
+                break;
+            case BOM:
+                totalReviewCount++;
+                totalReviewRate += 8;
+                break;
+            case ERRADO:
+                totalReviewCount++;
+                break;
+            case FACIL:
+                totalReviewCount++;
+                totalReviewRate += 10;
+                break;
+            default:
+                throw new IllegalArgumentException("Resposta inválida");
+        }
+
+        deck.setTotalReviewCount(totalReviewCount);
+        deck.setTotalReviewRate(totalReviewRate);
+        return deck;
     }
 
     public List<FlashCardEntity> listFlashCardsToReview(Long deckId) {

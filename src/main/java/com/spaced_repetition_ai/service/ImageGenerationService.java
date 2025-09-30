@@ -12,6 +12,9 @@ import com.spaced_repetition_ai.model.ImageStyle;
 
 import com.spaced_repetition_ai.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.lang.Nullable;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
@@ -31,13 +34,16 @@ public class ImageGenerationService {
 
     private final Client genaiClient;
     private final UserRepository userRepository;
+    private final ApplicationContext applicationContext;
 
     public record GeneratedImageData(byte[] imageBytes, String mimeType) {}
 
-    public ImageGenerationService(Client genaiClient, UserRepository userRepository) {
+    public ImageGenerationService(Client genaiClient, UserRepository userRepository, ApplicationContext applicationContext) {
         this.genaiClient = genaiClient;
         this.userRepository = userRepository;
+        this.applicationContext = applicationContext;
     }
+
 
     @Retryable(
             retryFor = ExternalServiceException.class,
@@ -49,11 +55,13 @@ public class ImageGenerationService {
             UserEntity usuarioLogado = userRepository.findById(userId)
                     .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + userId));
             if (usuarioLogado.getBalance() < 5) {
-                log.info("Saldo insuficiente para gerar imagem.");
+                throw new IllegalStateException("Saldo insuficiente para gerar imagem.");
             }
             if (prompt.isBlank()) {
-                log.info("Nao é possivel gerar imagem com prompt vazio.");
+                throw new IllegalArgumentException("Não é possível gerar imagem com prompt vazio.");
             }
+
+
             String promptFinal = prompt;
             try {
                 String template = style.getTemplate();
@@ -96,6 +104,13 @@ public class ImageGenerationService {
                     .outputMimeType("image/png")
                     .build();
             GenerateImagesResponse response = this.genaiClient.models.generateImages("imagen-4.0-fast-generate-001", promptFinal, config);
+
+            if (response.generatedImages().isEmpty() ||
+                    response.generatedImages().get().isEmpty()) {
+                log.error("API retornou lista vazia de imagens");
+                throw new ExternalServiceException("Falha ao gerar imagem: resposta vazia da API");
+            }
+
             byte[] imageBytesList = response.generatedImages().get().get(0).image().get().imageBytes().get();
 
             usuarioLogado.setBalance(usuarioLogado.getBalance() - 5);
@@ -103,15 +118,24 @@ public class ImageGenerationService {
             log.info("Imagem gerada com sucesso!");
 
             return new GeneratedImageData(imageBytesList, "image/png");
-        }catch (IllegalStateException e) {
+
+        } catch (ExternalServiceException e) {
+            log.warn("Tentativa falhou, será retentada: {}", e.getMessage());
             throw e;
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            log.error("Erro de validação: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("Erro inesperado ao gerar imagem", e);
+            throw new ExternalServiceException("Erro ao gerar imagem: " + e.getMessage(), e);
         }
     }
 
     @Async
     public CompletableFuture<GeneratedImageData> generateImageAsync(String prompt, @Nullable List<MultipartFile> images, ImageStyle style, Long userId) {
         try {
-            GeneratedImageData result = generateImage(prompt, images, style, userId);
+            ImageGenerationService self = applicationContext.getBean(ImageGenerationService.class);
+            GeneratedImageData result = self.generateImage(prompt, images, style, userId);
             return CompletableFuture.completedFuture(result);
         } catch (Exception e) {
             log.error("Falha na geração assíncrona de imagem", e);

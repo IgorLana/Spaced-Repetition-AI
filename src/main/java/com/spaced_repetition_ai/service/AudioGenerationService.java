@@ -4,8 +4,12 @@ package com.spaced_repetition_ai.service;
 import com.google.genai.Client;
 import com.google.genai.types.*;
 import com.spaced_repetition_ai.entity.UserEntity;
+import com.spaced_repetition_ai.exception.ExternalServiceException;
 import com.spaced_repetition_ai.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationContext;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.scheduling.annotation.Async;
 
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -28,27 +32,37 @@ public class AudioGenerationService {
 
     private final Client genaiClient;
     private final UserRepository userRepository;
+    private final ApplicationContext applicationContext;
 
-    public AudioGenerationService(Client genaiClient, UserRepository userRepository) {
+    public AudioGenerationService(Client genaiClient, UserRepository userRepository
+    , ApplicationContext applicationContext) {
         this.genaiClient = genaiClient;
         this.userRepository = userRepository;
+        this.applicationContext = applicationContext;
     }
 
     public record GeneratedAudioData(byte[] audioBytes, String mimeType) {}
 
+
+
+    @Retryable(
+            retryFor = ExternalServiceException.class,
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 2000, multiplier = 2)
+    )
     public GeneratedAudioData generateAudio(String prompt, @Nullable List<MultipartFile> audios, Long userId) {
+        try{
         UserEntity usuarioLogado = userRepository.findById(userId)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + userId));
 
-        if (usuarioLogado.getBalance() < 1){
-            log.info("Saldo insuficiente para gerar audio.");
-            return null;
-        }
+            if (usuarioLogado.getBalance() < 1) {
+                throw new IllegalStateException("Saldo insuficiente para gerar áudio.");
+            }
 
-        if (prompt.isBlank()){
-            log.info("Nao é possivel gerar audio com prompt vazio.");
-            return null;
-        }
+            // CORRIGIDO: lançar exceção em vez de retornar null
+            if (prompt.isBlank()) {
+                throw new IllegalArgumentException("Não é possível gerar áudio com prompt vazio.");
+            }
 
         List<Part> parts = new ArrayList<>();
         parts.add(Part.fromText(prompt));
@@ -86,24 +100,46 @@ public class AudioGenerationService {
                 )
                 .build();
 
-        try{
+
             GenerateContentResponse response = this.genaiClient.models.generateContent(this.audioGenerationModel, content, config);
+
+            // VALIDAÇÃO CRÍTICA
+            if (response.parts().isEmpty() ||
+                    response.parts().get(0).inlineData().isEmpty() ||
+                    response.parts().get(0).inlineData().get().data().isEmpty()) {
+                log.error("API retornou resposta vazia de áudio");
+                throw new ExternalServiceException("Falha ao gerar áudio: resposta vazia da API");
+            }
+
             byte[] rawAudioBytes = response.parts().get(0).inlineData().get().data().get();
             byte[] wavBytes = convertToWav(rawAudioBytes);
+
             usuarioLogado.setBalance(usuarioLogado.getBalance() - 1);
-            log.info("Audio gerado com sucesso!");
+            userRepository.save(usuarioLogado);
+            log.info("Áudio gerado com sucesso!");
+
             return new GeneratedAudioData(wavBytes, "audio/wav");
-        }catch (Exception e){
-            log.error("API do Google fora do ar!", e);
-            log.info("Ocorreu um erro ao gerar o audio. Tente novamente.");
-            return null;
+
+        } catch (ExternalServiceException e) {
+            log.warn("Tentativa de geração de áudio falhou, será retentada: {}", e.getMessage());
+            throw e;
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            log.error("Erro de validação: {}", e.getMessage());
+            throw e;
+        } catch (IOException | UnsupportedAudioFileException e) {
+            log.error("Erro ao converter áudio para WAV", e);
+            throw new ExternalServiceException("Erro ao processar áudio: " + e.getMessage(), e);
+        } catch (Exception e) {
+            log.error("Erro inesperado ao gerar áudio", e);
+            throw new ExternalServiceException("Erro ao gerar áudio: " + e.getMessage(), e);
         }
     }
 
     @Async
     public CompletableFuture<GeneratedAudioData> generateAudioAsync(String prompt, @Nullable List<MultipartFile> audios, Long userId) {
         try {
-            GeneratedAudioData result = generateAudio(prompt, audios, userId);
+            AudioGenerationService self = applicationContext.getBean(AudioGenerationService.class);
+            GeneratedAudioData result = self.generateAudio(prompt, audios, userId);
             return CompletableFuture.completedFuture(result);
         } catch (Exception e) {
             log.error("Falha na geração assíncrona de áudio", e);

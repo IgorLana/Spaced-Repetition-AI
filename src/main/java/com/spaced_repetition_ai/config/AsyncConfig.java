@@ -20,8 +20,6 @@ public class AsyncConfig {
         executor.setThreadNamePrefix("Async-");
         executor.initialize();
 
-        // Este é o passo mágico:
-        // Envolve o nosso executor com um decorador que propaga o SecurityContext
         return new DelegatingSecurityContextAsyncTaskExecutor(executor);
     }
 }

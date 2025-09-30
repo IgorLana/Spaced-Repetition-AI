@@ -50,7 +50,7 @@ public class SecurityConfig {
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .oauth2Login(oauth2 -> oauth2
                         .userInfoEndpoint(userInfo -> userInfo
-                                .oidcUserService(customOidcUserService)      // 🔵 Para Google (OIDC)
+                                .oidcUserService(customOidcUserService)
                                 .userService(customOAuth2UserService)
                         )
                         .successHandler(oAuth2AuthenticationSucessHandler)

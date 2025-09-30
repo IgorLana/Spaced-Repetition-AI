@@ -96,6 +96,8 @@ jobs:
                   SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
                   SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GITHUB_CLIENT_ID: ${{ secrets.GIT_CLIENT_ID }}
                   SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GITHUB_CLIENT_SECRET: ${{ secrets.GIT_CLIENT_SECRET }}
+                  spring.security.oauth2.client.registration.github.scope=read:user, user:email
+                  SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GITHUB_SCOPE: read:user, user:email
                   SPRING_JACKSON_TIME_ZONE: UTC
                 volumes:
                   - /home/ec2-user/keys:/app/keys:ro

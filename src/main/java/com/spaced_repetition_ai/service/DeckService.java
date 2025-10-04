@@ -13,6 +13,8 @@ import com.spaced_repetition_ai.model.Language;
 import com.spaced_repetition_ai.repository.DeckRepository;
 import com.spaced_repetition_ai.repository.FlashCardRepository;
 import com.spaced_repetition_ai.repository.UserRepository;
+import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -22,7 +24,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-
+@Slf4j
 @Service
 public class DeckService {
 
@@ -41,7 +43,6 @@ public class DeckService {
 
         List<DeckEntity> decks = deckRepository.findByUserId(usuarioLogado.getId());
 
-        System.out.println("Encontrados " + decks.size() + " decks.");
         return decks.stream()
                 .map(DeckResponseDTO::fromEntity)
                 .collect(Collectors.toList());
@@ -58,7 +59,9 @@ public class DeckService {
         DeckEntity deck = deckRepository.findByUserIdAndId(usuarioLogado.getId(), deckId)
                 .orElseThrow(() -> new RuntimeException("Deck não encontrado"));
 
-        double scoreDeck = deck.getTotalReviewRate() / (double) deck.getTotalReviewCount();
+        double scoreDeck = deck.getTotalReviewCount() > 0
+                ? deck.getTotalReviewRate() / (double) deck.getTotalReviewCount()
+                : 0.0;
 
                 return new DeckDetailsReponseDTO(
                         deck.getId(),
@@ -80,7 +83,7 @@ public class DeckService {
 
     }
 
-
+    @Transactional
     public void updateDeck(Long id, DeckUpdateDTO dto) {
 
         UserEntity usuarioLogado = getUsuarioLogado();
@@ -93,7 +96,7 @@ public class DeckService {
                     ent.setImagePath(dto.getImagePath());
                     ent.setEaseFactor(dto.getEaseFactor());
             deckRepository.save(ent);
-            System.out.println("Deck atualizado com sucesso!");
+            log.info("Deck atualizado com sucesso!");
             return ent;
         }).orElseThrow(() -> new RuntimeException("Deck não encontrado ou não pertence ao usuário."));
 
@@ -109,7 +112,7 @@ public class DeckService {
         deckRepository.deleteById(deck.getId());
     }
 
-
+    @Transactional
     public void createDeck(DeckRequestDTO dto){
 
         UserEntity usuarioLogado = getUsuarioLogado();
@@ -140,7 +143,7 @@ public class DeckService {
         deckEntity.setDeckType(Optional.ofNullable(dto.getDeckType()).orElse(DeckType.LANGUAGE));
 
         deckRepository.save(deckEntity);
-        System.out.println("Deck criado com sucesso!");
+        log.info("Deck criado com sucesso!");
 
     }
 

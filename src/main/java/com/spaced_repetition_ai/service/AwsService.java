@@ -1,14 +1,15 @@
 package com.spaced_repetition_ai.service;
 
-
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.cloudfront.cookie.CookiesForCustomPolicy;
-import software.amazon.awssdk.services.cloudfront.cookie.SignedCookie;
 import software.amazon.awssdk.services.cloudfront.model.CustomSignerRequest;
 
 import software.amazon.awssdk.services.cloudfront.CloudFrontUtilities;
+import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
@@ -28,6 +29,8 @@ import java.util.*;
 public class AwsService {
 
 
+
+
     @Value("${aws.s3.bucket-name}")
     private String bucketName;
 
@@ -40,10 +43,15 @@ public class AwsService {
     @Value("${cloudfront.private-key-path}")
     private String privateKeyPath;
 
+
     private final S3Presigner s3Presigner;
 
-    public AwsService(S3Presigner s3Presigner) {
+    private final S3Client s3Client;
+
+
+    public AwsService(S3Presigner s3Presigner, S3Client s3Client) {
         this.s3Presigner = s3Presigner;
+        this.s3Client = s3Client;
     }
 
     public String generatePresignedUploadUrl(Long userId, String fileName) {
@@ -71,18 +79,15 @@ public class AwsService {
 
     public Map<String, String> getSignedCloudFrontCookies(Long userId) {
         try {
-            // A URL do recurso para a política é o domínio e o caminho base dos arquivos.
-            // Teste com um path mais amplo primeiro
             String policyResourcePath = "https://" + cloudFrontDomain + "/users/" + userId + "/*";
 
-            // Carregue a chave privada a partir do arquivo
             PrivateKey privateKey = loadPrivateKeyFromFile(privateKeyPath);
 
             CloudFrontUtilities cloudFrontUtilities = CloudFrontUtilities.create();
 
             CustomSignerRequest customSignerRequest = CustomSignerRequest.builder()
-                    .resourceUrl(policyResourcePath) // URL base do recurso.
-                    .privateKey(privateKey) // Usa o objeto PrivateKey carregado.
+                    .resourceUrl(policyResourcePath)
+                    .privateKey(privateKey)
                     .keyPairId(keyPairId)
                     .expirationDate(Instant.now().plus(12, ChronoUnit.HOURS))
                     .build();
@@ -124,10 +129,8 @@ public class AwsService {
                     .replace("-----END PRIVATE KEY-----", "")
                     .replaceAll("\\s", "");
 
-            // Decodifica a chave de base64
             byte[] encoded = Base64.getDecoder().decode(privateKeyPEM);
 
-            // Cria a chave privada a partir da especificação PKCS8
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
             PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(encoded);
 
@@ -157,11 +160,60 @@ public class AwsService {
 
     private String extractCookieValue(String headerValue) {
         if (headerValue == null || !headerValue.contains("=")) {
-            return ""; // Retorna vazio se o formato for inesperado
+            return "";
         }
-        // Encontra o índice do primeiro '=' e pega a substring a partir do próximo caractere
         return headerValue.substring(headerValue.indexOf('=') + 1);
     }
+
+
+    public String uploadPublicMedia(byte[] mediaBytes, String mediaType, String extension) {
+        try {
+            String fileName = UUID.randomUUID().toString() + "." + extension;
+            String s3Key = "public/" + mediaType + "/" + fileName;
+            String contentType = determineContentType(fileName);
+
+            PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(s3Key)
+                    .contentType(contentType)
+                    .build();
+
+            s3Client.putObject(putObjectRequest, RequestBody.fromBytes(mediaBytes));
+
+            log.info("Mídia pública salva no S3: {}", s3Key);
+
+            return "/" + s3Key;
+
+        } catch (Exception e) {
+            log.error("Erro ao fazer upload de mídia pública no S3.", e);
+            return null;
+        }
+    }
+
+
+    public String downloadFileAsBase64(String s3Key) {
+        try {
+            // Remove a barra inicial se houver
+            String cleanKey = s3Key.startsWith("/") ? s3Key.substring(1) : s3Key;
+
+            byte[] fileBytes = s3Client.getObjectAsBytes(builder -> builder
+                    .bucket(bucketName)
+                    .key(cleanKey)
+            ).asByteArray();
+
+            String base64 = Base64.getEncoder().encodeToString(fileBytes);
+            log.info("Arquivo baixado do S3 e convertido para base64: {}", cleanKey);
+
+            return base64;
+
+        } catch (Exception e) {
+            log.error("Erro ao baixar arquivo do S3: {}", s3Key, e);
+            return null;
+        }
+    }
+
+
+
 }
 
 

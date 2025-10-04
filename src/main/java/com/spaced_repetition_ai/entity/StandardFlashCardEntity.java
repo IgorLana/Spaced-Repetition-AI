@@ -1,5 +1,7 @@
 package com.spaced_repetition_ai.entity;
 
+import com.spaced_repetition_ai.model.ImageStyle;
+import com.spaced_repetition_ai.model.Language;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -20,5 +22,8 @@ public class StandardFlashCardEntity {
     private String imagePath;
     private String audioPath;
     private String prompt;
+    private ImageStyle imageStyle;
+    private Language targetLanguage;
+    private Language sourceLanguage;
 
 }

@@ -74,6 +74,16 @@ public class FlashCardService {
         }
     }
 
+    public FlashcardResponseDTO getFlashCardById(Long flashCardId) {
+        UserEntity usuarioLogado = getUsuarioLogado();
+
+        FlashCardEntity flashCard = flashCardRepository.findByIdAndDeckUserId(flashCardId, usuarioLogado.getId())
+                .orElseThrow(() -> new NotFoundException("Flash card não encontrado com id: " + flashCardId));
+
+        return new FlashcardResponseDTO(flashCard.getFront(), flashCard.getBack(), flashCard.getImagePath(), flashCard.getAudioPath());
+
+    }
+
     public void updateFlashCard(Long id, FlashcardRequestDTO dto) {
         UserEntity usuarioLogado = getUsuarioLogado();
 

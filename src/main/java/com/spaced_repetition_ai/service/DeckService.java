@@ -75,7 +75,8 @@ public class DeckService {
                         deck.getDeckType(),
                         flashcardsToReview,
                         totalFlashcardsDeck,
-                        scoreDeck
+                        scoreDeck,
+                        deck.getImageStyle()
                 );
 
 
@@ -92,9 +93,8 @@ public class DeckService {
                     ent.setName(dto.getName());
                     ent.setTargetLanguage(dto.getTargetLanguage());
                     ent.setSourceLanguage(dto.getSourceLanguage());
-                    ent.setAudioPath(dto.getAudioPath());
-                    ent.setImagePath(dto.getImagePath());
                     ent.setEaseFactor(dto.getEaseFactor());
+                    ent.setImageStyle(dto.getImageStyle());
             deckRepository.save(ent);
             log.info("Deck atualizado com sucesso!");
             return ent;

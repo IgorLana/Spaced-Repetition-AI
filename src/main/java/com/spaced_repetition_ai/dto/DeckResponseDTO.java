@@ -2,6 +2,7 @@ package com.spaced_repetition_ai.dto;
 
 import com.spaced_repetition_ai.entity.DeckEntity;
 import com.spaced_repetition_ai.model.DeckType;
+import com.spaced_repetition_ai.model.ImageStyle;
 import com.spaced_repetition_ai.model.Language;
 
 public record DeckResponseDTO(
@@ -15,7 +16,8 @@ public record DeckResponseDTO(
         Double easeFactor,
         Boolean generateImage,
         Boolean generateAudio,
-        DeckType deckType
+        DeckType deckType,
+        ImageStyle imageStyle
 
         
 ) {
@@ -32,7 +34,8 @@ public record DeckResponseDTO(
                 deckEntity.getEaseFactor(),
                 deckEntity.getGenerateImage(),
                 deckEntity.getGenerateAudio(),
-                deckEntity.getDeckType()
+                deckEntity.getDeckType(),
+                deckEntity.getImageStyle()
                 
         );
     }

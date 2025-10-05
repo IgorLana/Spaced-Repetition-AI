@@ -27,7 +27,7 @@ public class DeckController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<FlashCardEntity> update(@PathVariable("id") Long id, @RequestBody @Valid DeckUpdateDTO dto) {
+    public ResponseEntity<DeckResponseDTO> update(@PathVariable("id") Long id, @RequestBody @Valid DeckUpdateDTO dto) {
         deckService.updateDeck(id, dto);
         return ResponseEntity.ok().build();
     }

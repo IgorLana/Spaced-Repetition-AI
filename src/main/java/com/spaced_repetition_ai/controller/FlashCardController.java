@@ -88,6 +88,11 @@ public class FlashCardController {
         return prompt.replaceAll("[<>\"']", "").trim();
     }
 
+    @GetMapping("/{id}")
+    public FlashcardResponseDTO getFlashCards(@PathVariable("id") Long flashCardId){
+        return flashCardService.getFlashCardById(flashCardId);
+    }
+
 
 
 

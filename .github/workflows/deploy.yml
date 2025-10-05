@@ -1,4 +1,4 @@
-name: Build, Push, and Deploy to AWS EC2
+Fname: Build, Push, and Deploy to AWS EC2
 
 on:
   push:
@@ -85,7 +85,7 @@ jobs:
                   CLOUDFRONT_KEY_PAIR_ID: "${{ secrets.CLOUDFRONT_KEY_PAIR_ID }}"
                   CLOUDFRONT_PRIVATE_KEY_PATH: /app/keys/cloudfront_private_key.pem
                   COOKIE_DOMAIN: ${{ secrets.COOKIE_DOMAIN }}
-                  APP_OAUTH2_REDIRECT_URI: "https://mnemus.tech/auth/callback"
+                  APP_OAUTH2_REDIRECT_URI: ${{ secrets.APP_OAUTH2_REDIRECT_URI}}
                   SPRING_MAIL_HOST: smtp.gmail.com
                   SPRING_MAIL_PORT: 587
                   SPRING_MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}

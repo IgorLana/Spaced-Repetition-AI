@@ -77,37 +77,48 @@ public class FlashCardService {
     public void updateFlashCard(Long id, FlashcardRequestDTO dto) {
         UserEntity usuarioLogado = getUsuarioLogado();
 
-        if(dto.getFront() == null || dto.getFront().trim().isEmpty()
-        || dto.getBack() == null || dto.getBack().trim().isEmpty()) {
-            FlashCardEntity ent = flashCardRepository.findByIdAndDeckUserId(id, usuarioLogado.getId())
-                    .orElseThrow(() -> new NotFoundException("FlashCard não encontrado com id: " + id));
-            ent.setFront(dto.getFront());
-            ent.setBack(dto.getBack());
-            ent.setImagePath(dto.getImagePath());
-            ent.setAudioPath(dto.getAudioPath());
-            try {
-                flashCardRepository.save(ent);
-                log.info("FlashCard atualizado com sucesso!");
-            } catch (Exception e) {
-                throw new DatabaseException("Erro ao atualizar o flashcard", e);
-            }
-        }else{
-            throw new IllegalArgumentException("O FlashCard não pode ser atualizado com apenas um dos campos: front e back.");
+        FlashCardEntity flashCard = flashCardRepository.findByIdAndDeckUserId(id, usuarioLogado.getId())
+                .orElseThrow(() -> new NotFoundException("FlashCard não encontrado com id: " + id));
+
+        boolean frontVazio = dto.getFront() == null || dto.getFront().trim().isEmpty();
+        boolean backVazio = dto.getBack() == null || dto.getBack().trim().isEmpty();
+
+        if (frontVazio && backVazio) {
+            throw new IllegalArgumentException("Pelo menos um dos campos (front ou back) deve ser preenchido.");
+        }
+
+        if (!frontVazio) {
+            flashCard.setFront(dto.getFront());
+        }
+
+        if (!backVazio) {
+            flashCard.setBack(dto.getBack());
+        }
+
+        flashCard.setImagePath(dto.getImagePath());
+        flashCard.setAudioPath(dto.getAudioPath());
+
+        try {
+            flashCardRepository.save(flashCard);
+            log.info("FlashCard atualizado com sucesso!");
+        } catch (Exception e) {
+            throw new DatabaseException("Erro ao atualizar o flashcard", e);
         }
     }
 
     public void generateFlashCard(Long deckId, FlashcardRequestDTO dto) {
 
-        if (dto.getFront() == null || dto.getFront().trim().isEmpty()) {
-            throw new IllegalArgumentException("A frente do flashcard não pose ser vazia.");
-        }
+        UserEntity usuarioLogado = getUsuarioLogado();
+        DeckEntity deckEntity = deckRepository.findByUserIdAndId(usuarioLogado.getId(), deckId)
+                .orElseThrow(() -> new IllegalArgumentException("Deck não encontrado ou não pertence ao usuário."));
+
         LocalDateTime createdDate = LocalDateTime.now();
         LocalDateTime lastReview = LocalDateTime.now();
         LocalDateTime nextReview = createdDate.plusMinutes(1);
 
-        UserEntity usuarioLogado = getUsuarioLogado();
-        DeckEntity deckEntity = deckRepository.findByUserIdAndId(usuarioLogado.getId(), deckId)
-                .orElseThrow(() -> new RuntimeException("Deck não encontrado ou não pertence ao usuário."));
+        if (dto.getFront() == null || dto.getFront().trim().isEmpty()) {
+            throw new IllegalArgumentException("A frente do flashcard não pose ser vazia.");
+        }
 
         String finalImagePath = dto.getImagePath();
         String finalAudioPath = dto.getAudioPath();
@@ -206,7 +217,7 @@ public class FlashCardService {
     }
 
     public void saveStandardFlashCards(String prompt, String front, String back, String imageBase64, String audioBase64, ImageStyle imageStyle, Language targetLanguage, Language sourceLanguage) {
-        if (prompt != null && !prompt.trim().isEmpty() && front != null && back != null) {
+        if (prompt != null && !prompt.trim().isEmpty() && front != null && back != null && !back.trim().isEmpty() && audioBase64 != null && !audioBase64.isBlank() && imageBase64 != null && !imageBase64.isBlank()) {
 
             String standardizedPrompt = prompt.toLowerCase().trim();
 

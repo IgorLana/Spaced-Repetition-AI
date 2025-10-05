@@ -54,6 +54,9 @@ public class FlashCardController {
     @PostMapping("/ai")
     public ResponseEntity<FlashcardResponseDTO> generateAiFlashCard(@RequestParam("prompt") String prompt, @RequestParam("deckId") Long deckId) {
         log.info("Recebida requisição para gerar flashcard com IA.");
+
+        prompt = sanitizePrompt(prompt);
+
         try {
             CompletableFuture<FlashcardResponseDTO> future = flashCardService.generateAiFlashCard(prompt, deckId);
 
@@ -64,7 +67,6 @@ public class FlashCardController {
 
         } catch (InterruptedException | ExecutionException e) {
             log.error("Erro ao esperar pelo resultado do CompletableFuture", e);
-            Throwable cause = e.getCause() != null ? e.getCause() : e;
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         } catch (Exception e) {
             log.error("Erro inesperado na camada do controller", e);
@@ -78,6 +80,12 @@ public class FlashCardController {
         UserEntity usuarioLogado = flashCardService.getUsuarioLogado();
         String presignedUrl = awsService.generatePresignedUploadUrl(usuarioLogado.getId(), fileName);
         return ResponseEntity.ok(Map.of("url", presignedUrl));
+    }
+
+
+    private String sanitizePrompt(String prompt) {
+        // Remove potentially harmful characters/patterns
+        return prompt.replaceAll("[<>\"']", "").trim();
     }
 
 

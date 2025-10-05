@@ -32,6 +32,8 @@ public class AudioGenerationController {
     public ResponseEntity<Map<String, String>> generateAudio(@RequestParam("prompt") String prompt,
                                                                    @RequestParam(value = "audios", required = false) List<MultipartFile> audios){
 
+        prompt = sanitizePrompt(prompt);
+
         UserEntity currentUser = userService.getAuthenticatedUser();
         Long userId = currentUser.getId();
         AudioGenerationService.GeneratedAudioData audioData = this.audioGenaiService.generateAudio(prompt, audios, userId);
@@ -49,8 +51,11 @@ public class AudioGenerationController {
 
         return ResponseEntity.ok(response);
 
+    }
 
-
+    private String sanitizePrompt(String prompt) {
+        // Remove potentially harmful characters/patterns
+        return prompt.replaceAll("[<>\"']", "").trim();
     }
 
 }

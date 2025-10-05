@@ -34,6 +34,9 @@ public class ImageGenerationController {
                                                         @RequestParam(value = "images", required = false) List<MultipartFile> images,
                                                         @RequestParam(value = "imageStyle", required = false) ImageStyle imageStyle
     ) {
+
+        prompt = sanitizePrompt(prompt);
+
         UserEntity currentUser = userService.getAuthenticatedUser();
         Long userId = currentUser.getId();
 
@@ -46,5 +49,10 @@ public class ImageGenerationController {
                 "mimeType", imageData.mimeType()
         );
         return ResponseEntity.ok(response);
+    }
+
+    private String sanitizePrompt(String prompt) {
+        // Remove potentially harmful characters/patterns
+        return prompt.replaceAll("[<>\"']", "").trim();
     }
 }

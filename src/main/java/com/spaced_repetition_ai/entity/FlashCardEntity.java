@@ -20,7 +20,9 @@ public class FlashCardEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Column(columnDefinition = "TEXT")
     private String front;
+    @Column(columnDefinition = "TEXT")
     private String back;
     private String imagePath;
     private String audioPath;

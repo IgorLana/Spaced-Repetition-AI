@@ -57,7 +57,7 @@ public class AuthController {
                 .build();
         userRepository.save(user);
 
-        emailService.sendVerificationEmail(user.getEmail(), verificationToken);
+        emailService.sendVerificationEmail(user.getEmail(), user.getName(), verificationToken);
 
         return ResponseEntity.ok(new AuthResponse("Registo bem-sucedido. Por favor, verifique seu e-mail para ativar a conta.", null));
     }
@@ -144,7 +144,7 @@ public class AuthController {
                     user.setVerificationToken(newToken);
                     user.setTokenExpirationDate(LocalDateTime.now().plusHours(24));
                     userRepository.save(user);
-                    emailService.sendVerificationEmail(user.getEmail(), newToken);
+                    emailService.sendVerificationEmail(user.getEmail(), user.getName(), newToken);
 
                     return ResponseEntity.ok(new AuthResponse("Novo e-mail de verificação enviado.", null));
                 })

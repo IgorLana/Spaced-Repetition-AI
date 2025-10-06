@@ -86,12 +86,14 @@ jobs:
                   CLOUDFRONT_PRIVATE_KEY_PATH: /app/keys/cloudfront_private_key.pem
                   COOKIE_DOMAIN: ${{ secrets.COOKIE_DOMAIN }}
                   APP_OAUTH2_REDIRECT_URI: ${{ secrets.APP_OAUTH2_REDIRECT_URI }}
-                  SPRING_MAIL_HOST: smtp.gmail.com
-                  SPRING_MAIL_PORT: 587
-                  SPRING_MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
-                  SPRING_MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
-                  SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: true
-                  SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: true
+                  SPRING_MAIL_HOST: smtp.titan.email
+                  SPRING_MAIL_PORT=465
+                  SPRING_MAIL_USERNAME= ${{ secrets.MAIL_USERNAME }}
+                  SPRING_MAIL_PASSWORD= ${{ secrets.MAIL_PASSWORD }}
+                  SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=true
+                  SPRING_MAIL_PROPERTIES_MAIL_SMTP_SSL_ENABLE=true
+                  SPRING_MAIL_PROPERTIES_MAIL_SMTP_SOCKET_FACTORY_PORT=465
+                  SPRING_MAILS_PROPERTIES_MAIL_SMTP_SOCKETFACTORY_CLASS=javax.net.ssl.SSLSocketFactory
                   SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
                   SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
                   SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GITHUB_CLIENT_ID: ${{ secrets.GIT_CLIENT_ID }}

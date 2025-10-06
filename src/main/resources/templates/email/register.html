@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bem-vindo ao Mnemus!</title>
+    <style>
+        body {
+            font-family: "Helvetica Neue", Arial, sans-serif;
+            background-color: #f6f9fc;
+            color: #0f172a;
+            margin: 0;
+            padding: 0;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 24px auto;
+            background-color: #ffffff;
+            padding: 24px;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+        }
+        .header {
+            text-align: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .header img {
+            width: 56px;
+            height: 56px;
+            margin-bottom: 12px;
+        }
+        .header h1 {
+            color: #0f172a;
+            font-size: 26px;
+            margin: 0 0 8px;
+        }
+        .subtitle {
+            font-size: 15px;
+            color: #64748b;
+            margin: 0;
+        }
+        .content {
+            padding: 24px 0;
+            line-height: 1.7;
+            color: #1f2937;
+        }
+        .content p {
+            margin: 0 0 16px;
+        }
+        .highlight {
+            background-color: #f1f5f9;
+            border-left: 4px solid #2563eb;
+            padding: 12px 18px;
+            border-radius: 10px;
+            margin: 24px 0;
+            color: #1e3a8a;
+        }
+        .benefits {
+            list-style-type: none;
+            padding: 0;
+            margin: 0 0 24px;
+        }
+        .benefits li {
+            margin-bottom: 12px;
+            padding-left: 28px;
+            position: relative;
+            color: #1f2937;
+        }
+        .benefits li::before {
+            content: "✨";
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+        .button {
+            display: inline-block;
+            padding: 14px 28px;
+            margin: 24px 0;
+            background: linear-gradient(90deg, #2563eb 0%, #3b82f6 100%);
+            color: #ffffff !important;
+            text-decoration: none;
+            border-radius: 999px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            box-shadow: 0 12px 30px rgba(37, 99, 235, 0.25);
+            max-width: 100%;
+            box-sizing: border-box;
+            white-space: normal;
+        }
+        .button:hover {
+            background: linear-gradient(90deg, #1d4ed8 0%, #2563eb 100%);
+        }
+        .cta-note {
+            font-size: 13px;
+            color: #475569;
+            text-align: center;
+        }
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            color: #94a3b8;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 20px;
+            margin-top: 20px;
+        }
+        @media (max-width: 600px) {
+            .email-container {
+                margin: 16px;
+                padding: 20px;
+            }
+            .button {
+                display: block;
+                width: 100%;
+                text-align: center;
+                padding: 16px 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="email-container">
+    <div class="header">
+        <h1>Bem-vindo, <span th:text="${name}"></span>!</h1>
+    <p class="subtitle">Estamos prontos para acelerar sua jornada de aprendizado com inteligência e proximidade</p>
+    </div>
+    <div class="content">
+        <p>Olá <strong><span th:text="${name}"></span></strong>,</p>
+        <p>Obrigado por escolher o Mnemus — o seu copiloto inteligente para transformar aprendizado espaçado em resultados reais. Estamos aqui para garantir que cada revisão realmente conte.</p>
+        <div class="highlight">
+            <strong>O que espera por você a partir de agora:</strong>
+            <ul class="benefits">
+                <li>Planos de estudo personalizados que se adaptam ao seu ritmo.</li>
+                <li>Lembretes certeiros com o apoio da IA, sempre no momento ideal.</li>
+                <li>Insights visuais para acompanhar o progresso e manter a motivação.</li>
+            </ul>
+        </div>
+        <p>Para começar com o pé direito, confirme seu e-mail. Assim mantemos sua conta segura e liberamos toda a experiência feita sob medida para você.</p>
+        <p style="text-align: center;">
+            <a href="#" th:href="${verificationUrl}" class="button">Ativar minha conta</a>
+        </p>
+        <p class="cta-note">Prefere copiar? Cole este link no navegador: <a href="#" th:href="${verificationUrl}" th:text="${verificationUrl}"></a></p>
+        <p>Você recebeu esta mensagem porque alguém (esperamos que você!) se cadastrou com este e-mail. Se não foi você, basta ignorar — nenhuma ação extra é necessária.</p>
+        <p>Se precisar de ajuda, responda a este e-mail ou visite o centro de suporte dentro do app. Estamos na torcida pelo seu próximo avanço.</p>
+        <p>Com entusiasmo,<br>A equipe do Mnemus </p>
+    </div>
+    <div class="footer">
+        <p>Você recebeu este e-mail porque criou uma conta no Mnemus. Protegemos sua privacidade com rigor.</p>
+        <p>© <span th:text="${year}">2025</span> Mnemus. Todos os direitos reservados.</p>
+    </div>
+</div>
+</body>
+</html>

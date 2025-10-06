@@ -30,9 +30,9 @@ public class CreatePaymentPreferenceService {
     private final UserRepository userRepository;
 
     private static final Map<String, CreditPackage> CREDIT_PACKAGES = Map.of(
-            "package_300", new CreditPackage("300 Créditos", 300, new BigDecimal("40.00")),
-            "package_600", new CreditPackage("600 Créditos", 600, new BigDecimal("70.00")),
-            "package_1000", new CreditPackage("1000 Créditos", 1000, new BigDecimal("100.00"))
+            "package_300", new CreditPackage("300 Créditos", 300, new BigDecimal("20.00")),
+            "package_600", new CreditPackage("600 Créditos", 600, new BigDecimal("40.00")),
+            "package_1000", new CreditPackage("1000 Créditos", 1000, new BigDecimal("60.00"))
     );
 
     public CreatePreferenceResponseDTO createPreference(PurchaseCreditsRequestDTO input) {
@@ -60,13 +60,13 @@ public class CreatePaymentPreferenceService {
         );
 
         var backUrls = new CreatePreferenceRequestDTO.BackUrlsDTO(
-                "https://632e7b6263b0.ngrok-free.app",
-                "https://632e7b6263b0.ngrok-free.app",
-                "https://632e7b6263b0.ngrok-free.app"
+                "https://www.mnemus.tech",
+                "https://www.mnemus.tech",
+                "https://www.mnemus.tech"
         );
 
 
-        String notificationUrl = "https://ce218d8d923a.ngrok-free.app/api/v1/webhooks/mercadopago";
+        String notificationUrl = "https://www.mnemus.tech/api/v1/webhooks/mercadopago";
 
         try {
             CreatePreferenceResponseDTO output = mercadoPagoClient.createPreference(

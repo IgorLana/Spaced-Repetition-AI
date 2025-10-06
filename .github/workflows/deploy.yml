@@ -12,9 +12,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # ================================================================
-      # = CORREÇÃO AQUI: de 'vv4' para 'v4'                            =
-      # ================================================================
       - name: Cache Maven packages
         uses: actions/cache@v4
         with:
@@ -93,7 +90,7 @@ jobs:
                   SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=true
                   SPRING_MAIL_PROPERTIES_MAIL_SMTP_SSL_ENABLE=true
                   SPRING_MAIL_PROPERTIES_MAIL_SMTP_SOCKET_FACTORY_PORT=465
-                  SPRING_MAILS_PROPERTIES_MAIL_SMTP_SOCKETFACTORY_CLASS=javax.net.ssl.SSLSocketFactory
+                  SPRING_MAIL_PROPERTIES_MAIL_SMTP_SOCKETFACTORY_CLASS=javax.net.ssl.SSLSocketFactory
                   SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
                   SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
                   SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GITHUB_CLIENT_ID: ${{ secrets.GIT_CLIENT_ID }}
